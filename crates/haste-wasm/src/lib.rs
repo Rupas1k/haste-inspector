@@ -1,26 +1,15 @@
-// usefule links:
-// - https://rustwasm.github.io/docs/book/reference/add-wasm-support-to-crate.html
-// - https://stackoverflow.com/a/65336309
-// - https://docs.rs/prost-build/latest/prost_build/struct.Config.html#method.type_attribute
-//   it should be possible to make prost add [wasm_bindgen] "derives".
-// - https://stackoverflow.com/questions/65332927/is-it-possible-to-wasm-bindgen-public-structs-and-functions-defined-in-anothe
-
+use std::fmt::Display;
 use std::io::Cursor;
 
-use haste::{
-    demofile::DemoFile,
-    demostream::DemoStream,
-    entities::{self, Entity},
-    fieldpath::FieldPath,
-    fieldvalue::FieldValue,
-    flattenedserializers::FlattenedSerializer,
-    parser::{NopVisitor, Parser},
+use source2_demo::{
+    Context, DemoRunner, Entity, EntityField, FieldValue, Interests, Observer, ObserverResult,
+    Parser,
 };
-use wasm_bindgen::{prelude::wasm_bindgen, JsError, UnwrapThrowExt};
+use wasm_bindgen::{prelude::wasm_bindgen, JsError};
 
 #[wasm_bindgen]
 pub struct WrappedParser {
-    parser: Parser<DemoFile<Cursor<Vec<u8>>>, NopVisitor>,
+    parser: Parser<'static, source2_demo::reader::SeekableReader<Cursor<Vec<u8>>>>,
 }
 
 #[wasm_bindgen(getter_with_clone)]
@@ -53,118 +42,104 @@ pub struct StringTableItemLi {
     pub user_data: Option<Vec<u8>>,
 }
 
+#[derive(Default)]
+struct InspectorState;
+
+impl Observer for InspectorState {
+    fn interests(&self) -> Interests {
+        Interests::ENTITY_STATE | Interests::STRING_TABLE_STATE | Interests::STRING_TABLE_ENTRIES
+    }
+
+    fn on_tick_start(&mut self, _ctx: &Context) -> ObserverResult {
+        Ok(())
+    }
+}
+
 #[wasm_bindgen]
 impl WrappedParser {
     #[wasm_bindgen(constructor, js_name = "fromBytes")]
     pub fn from_bytes(bytes: Vec<u8>) -> Result<WrappedParser, JsError> {
-        let demo_file = DemoFile::start_reading(Cursor::new(bytes))?;
-        let parser = Parser::from_stream(demo_file)?;
+        let cursor = Cursor::new(bytes);
+        let mut parser = Parser::from_reader(cursor).map_err(to_js_error)?;
+        parser.register_observer::<InspectorState>();
         Ok(Self { parser })
     }
 
     #[wasm_bindgen(js_name = "tick")]
-    pub fn tick(&mut self) -> i32 {
-        self.parser.context().tick()
+    pub fn tick(&self) -> i32 {
+        self.parser.context().tick() as i32
     }
 
     #[wasm_bindgen(js_name = "totalTicks")]
-    pub fn total_ticks(&mut self) -> Result<i32, JsError> {
-        self.parser
-            .demo_stream_mut()
-            .total_ticks()
-            .map_err(|err| JsError::new(&err.to_string()))
+    pub fn total_ticks(&self) -> i32 {
+        self.parser.replay_info().playback_ticks()
     }
 
     #[wasm_bindgen(js_name = "runToTick")]
     pub fn run_to_tick(&mut self, tick: i32) -> Result<(), JsError> {
-        self.parser
-            .run_to_tick(tick)
-            .map_err(|err| JsError::new(&err.to_string()))
-    }
+        if tick < 0 {
+            return Ok(());
+        }
 
-    fn collect_entity_list<'a>(
-        entities: impl Iterator<Item = (&'a i32, &'a Entity)>,
-    ) -> Vec<EntityLi> {
-        entities
-            .map(|(index, entity)| EntityLi {
-                index: *index,
-                name: entity.serializer().serializer_name.str.to_string(),
-            })
-            .collect()
+        let target_tick = tick as u32;
+        if self.parser.context().tick() == u32::MAX || target_tick >= self.parser.context().tick() {
+            self.parser.run_to_tick(target_tick).map_err(to_js_error)
+        } else {
+            self.parser.jump_to_tick(target_tick).map_err(to_js_error)
+        }
     }
 
     #[wasm_bindgen(js_name = "listEntities")]
-    pub fn list_entities(&self) -> Option<Vec<EntityLi>> {
+    pub fn list_entities(&self) -> Vec<EntityLi> {
         self.parser
             .context()
             .entities()
-            .map(|entities| Self::collect_entity_list(entities.iter()))
+            .iter()
+            .map(entity_li)
+            .collect()
     }
 
     #[wasm_bindgen(js_name = "listBaselineEntities")]
-    pub fn list_baseline_entities(&self) -> Option<Vec<EntityLi>> {
+    pub fn list_baseline_entities(&self) -> Vec<EntityLi> {
         self.parser
             .context()
-            .entities()
-            .map(|entities| Self::collect_entity_list(entities.iter_baselines()))
-    }
-
-    fn collect_entity_field_list(entity: &Entity) -> Vec<EntityFieldLi> {
-        entity
-            .iter()
-            .map(|(key, field_value)| {
-                let fp = entity
-                    .get_path(key)
-                    // NOTE: this should never throw because if entity
-                    // was returned it means that it exists thus path
-                    // exists
-                    .unwrap_throw();
-                let (named_path, var_type) = get_value_info(entity.serializer(), fp);
-                let value = match field_value {
-                    haste::fieldvalue::FieldValue::String(data) => {
-                        String::from_utf8_lossy(data).into_owned()
-                    }
-                    other => other.to_string(),
-                };
-                EntityFieldLi {
-                    path: fp.iter().cloned().collect(),
-                    named_path,
-                    value,
-                    encoded_as: var_type,
-                    decoded_as: get_field_value_discriminant_name(field_value).to_string(),
-                }
+            .baseline_entities()
+            .into_iter()
+            .map(|entity| EntityLi {
+                index: entity.class_id,
+                name: entity.class_name,
             })
             .collect()
     }
 
     #[wasm_bindgen(js_name = "listEntityFields")]
     pub fn list_entity_fields(&self, entity_index: i32) -> Option<Vec<EntityFieldLi>> {
-        self.parser.context().entities().and_then(|entities| {
-            entities
-                .get(&entity_index)
-                .map(Self::collect_entity_field_list)
-        })
+        self.parser
+            .context()
+            .entities()
+            .get_by_index(entity_index as usize)
+            .ok()
+            .map(|entity| collect_entity_field_list(entity.fields()))
     }
 
     #[wasm_bindgen(js_name = "listBaselineEntityFields")]
     pub fn list_baseline_entity_fields(&self, entity_index: i32) -> Option<Vec<EntityFieldLi>> {
-        self.parser.context().entities().and_then(|entities| {
-            entities
-                .get_baseline(&entity_index)
-                .map(Self::collect_entity_field_list)
-        })
+        self.parser
+            .context()
+            .baseline_fields(entity_index)
+            .map(collect_entity_field_list)
     }
 
     #[wasm_bindgen(js_name = "listStringTables")]
-    pub fn list_string_tables(&self) -> Option<Vec<StringTableLi>> {
-        self.parser.context().string_tables().map(|string_tables| {
-            string_tables
-                .tables()
-                .map(|string_table| StringTableLi {
-                    name: string_table.name().to_string(),
-                })
-                .collect()
-        })
+    pub fn list_string_tables(&self) -> Vec<StringTableLi> {
+        self.parser
+            .context()
+            .string_tables()
+            .iter()
+            .map(|string_table| StringTableLi {
+                name: string_table.name().to_string(),
+            })
+            .collect()
     }
 
     #[wasm_bindgen(js_name = "listStringTableItems")]
@@ -175,87 +150,61 @@ impl WrappedParser {
         self.parser
             .context()
             .string_tables()
-            .and_then(|string_tables| {
-                string_tables
-                    .find_table(&string_table_name)
-                    .map(|string_table| {
-                        string_table
-                            .items()
-                            .map(|(_index, item)| StringTableItemLi {
-                                string: item.string.clone(),
-                                user_data: item
-                                    .user_data
-                                    .as_ref()
-                                    .map(|rc| unsafe { (&*rc.get()).clone() }),
-                            })
-                            .collect()
+            .get_by_name(&string_table_name)
+            .ok()
+            .map(|string_table| {
+                string_table
+                    .iter()
+                    .map(|row| StringTableItemLi {
+                        string: Some(row.key().as_bytes().to_vec()),
+                        user_data: row.value().map(|value| value.to_vec()),
                     })
+                    .collect()
             })
     }
 }
 
-fn get_value_info(serializer: &FlattenedSerializer, fp: &FieldPath) -> (Vec<String>, String) {
-    let mut named_path = Vec::with_capacity(fp.last());
-
-    let first_field_index = fp.get(0).unwrap_throw();
-    let mut field = serializer
-        .get_child(first_field_index)
-        // NOTE: this may only throw if data is corrupted or something, but
-        // never in normal circumbstances
-        .unwrap_throw();
-    if let Some(ref send_node) = field.send_node {
-        named_path.extend(
-            send_node
-                .iter()
-                .filter_map(|maybe_part| maybe_part.as_ref().map(|part| part.str.to_string())),
-        );
+fn entity_li(entity: &Entity) -> EntityLi {
+    EntityLi {
+        index: entity.index() as i32,
+        name: entity.class().name().to_string(),
     }
-    named_path.push(field.var_name.str.to_string());
-
-    for field_index in fp.iter().skip(1) {
-        if field.is_dynamic_array() {
-            field = field.get_child(0).unwrap_throw();
-            debug_assert!(field.send_node.is_none());
-            named_path.push(field_index.to_string());
-        } else {
-            // TODO: consider changing type of index arg in child*?
-            // funcs from usize to u8 to be consistent with an actual
-            // type of data in FieldPath
-            field = field.get_child(*field_index as usize).unwrap_throw();
-            if let Some(ref send_node) = field.send_node {
-                named_path.extend(
-                    send_node.iter().filter_map(|maybe_part| {
-                        maybe_part.as_ref().map(|part| part.str.to_string())
-                    }),
-                );
-            }
-            named_path.push(field.var_name.str.to_string());
-        }
-    }
-
-    (named_path, field.var_type.str.to_string())
 }
 
-fn get_field_value_discriminant_name(field_value: &FieldValue) -> &'static str {
-    match field_value {
-        FieldValue::I64(_) => "I64",
-        FieldValue::U64(_) => "U64",
-        FieldValue::F32(_) => "F32",
-        FieldValue::Bool(_) => "Bool",
-        FieldValue::Vector3(_) => "Vector3",
-        FieldValue::Vector2(_) => "Vector2",
-        FieldValue::Vector4(_) => "Vector4",
-        FieldValue::QAngle(_) => "QAngle",
-        FieldValue::String(_) => "String",
+fn collect_entity_field_list(fields: Vec<EntityField<'_>>) -> Vec<EntityFieldLi> {
+    fields
+        .into_iter()
+        .map(|field| EntityFieldLi {
+            path: field
+                .path
+                .into_iter()
+                .map(|part| u8::try_from(part).unwrap_or(u8::MAX))
+                .collect(),
+            named_path: field.name.split('.').map(ToString::to_string).collect(),
+            value: field.value.map(format_field_value).unwrap_or_default(),
+            encoded_as: field.field_type,
+            decoded_as: field.decoded_type.to_string(),
+        })
+        .collect()
+}
+
+fn format_field_value(value: &FieldValue) -> String {
+    match value {
+        FieldValue::String(value) => value.clone(),
+        other => other.to_string(),
     }
+}
+
+fn to_js_error(error: impl Display) -> JsError {
+    JsError::new(&error.to_string())
 }
 
 #[wasm_bindgen(js_name = "isEHandleValid")]
 pub fn is_ehandle_valid(handle: u32) -> bool {
-    entities::is_ehandle_valid(handle)
+    handle != u32::MAX && handle != 0x00ff_ffff
 }
 
 #[wasm_bindgen(js_name = "eHandleToIndex")]
 pub fn ehandle_to_index(handle: u32) -> i32 {
-    entities::ehandle_to_index(handle)
+    (handle & 0x3fff) as i32
 }

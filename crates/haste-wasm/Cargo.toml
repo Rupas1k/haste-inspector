@@ -4,11 +4,11 @@ version = "0.0.0"
 edition = "2021"
 
 [dependencies]
-haste.workspace = true
+source2-demo.workspace = true
 wasm-bindgen.workspace = true
 
 [features]
-protobuf-src = ["haste/protobuf-src"]
+protobuf-src = []
 
 [lib]
 crate-type = ["cdylib"]

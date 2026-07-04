@@ -8,6 +8,5 @@ members = [
 edition = "2021"
 
 [workspace.dependencies]
-haste = { git = "https://github.com/blukai/haste.git", rev = "e5491c3", features = ["preserve-metadata"] }
+source2-demo = { path = "../source2-demo/source2-demo", default-features = false, features = ["dota", "deadlock", "cs2"] }
 wasm-bindgen = "0.2"
-
