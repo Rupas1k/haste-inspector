@@ -17,17 +17,42 @@ export default function DemControlBar() {
   }, []);
 
   const [, startTransition] = useTransition();
+  const demTotalTicks = demParser?.totalTicks() ?? -1;
   const handleValueCommit = useCallback(
     ([nextDemTick]: number[]) => {
       startTransition(() => {
         demParser!.runToTick(nextDemTick);
-        setDemTick(demParser!.tick());
+        const actualTick = demParser!.tick();
+        setValue(actualTick);
+        setDemTick(actualTick);
       });
     },
     [demParser, setDemTick],
   );
 
-  const demTotalTicks = demParser?.totalTicks() ?? -1;
+  const handleSliderKeyDown = useCallback(
+    (ev: React.KeyboardEvent<HTMLSpanElement>) => {
+      if (
+        ev.key !== "ArrowLeft" &&
+        ev.key !== "ArrowDown" &&
+        ev.key !== "ArrowRight" &&
+        ev.key !== "ArrowUp"
+      ) {
+        return;
+      }
+
+      ev.preventDefault();
+
+      const direction = ev.key === "ArrowLeft" || ev.key === "ArrowDown" ? -1 : 1;
+      const nextDemTick = Math.min(Math.max(demTick + direction, 0), demTotalTicks);
+      demParser!.runToTick(nextDemTick);
+      const actualTick = demParser!.tick();
+      setValue(actualTick);
+      setDemTick(actualTick);
+    },
+    [demParser, demTick, demTotalTicks, setDemTick],
+  );
+
   const formattedTotalTicks = formatNumber(demTotalTicks);
   const tickStyle: React.CSSProperties = {
     width: `${formattedTotalTicks.length}ch`,
@@ -46,6 +71,7 @@ export default function DemControlBar() {
         value={[value]}
         onValueChange={handleValueChange}
         onValueCommit={handleValueCommit}
+        onKeyDown={handleSliderKeyDown}
       />
       <Tooltip content="total ticks">
         <span style={tickStyle} className="text-center shrink-0 cursor-default">
