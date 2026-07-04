@@ -16,6 +16,8 @@ import * as DropdownMenu from "../../shared/components/DropdownMenu";
 import { ScrollArea } from "../../shared/components/ScrollArea";
 import { Tooltip } from "../../shared/components/Tooltip";
 import { cn } from "../../shared/utils/style";
+import { buildEntityFieldRows } from "./entityFieldGrouping";
+import type { EntityFieldRow } from "./entityTypes";
 
 const LI_HEIGHT = 26;
 
@@ -25,77 +27,10 @@ const DEFAULT_SHOW_FIELD_ENCODED_TYPE = true;
 const DEFAULT_SHOW_FIELD_DECODED_TYPE = false;
 const DEFAULT_SHOW_FIELD_PATH = false;
 
-const FIELD_INDEX_RE = /^\d{4}$/;
-const ARRAY_TYPE_RE = /^(.*)\[(\d+)\]$/;
-
-type WrappedEntityFieldLi = {
-  inner: Pick<EntityFieldLi, "decodedAs" | "encodedAs" | "namedPath" | "path" | "value">;
-  joinedPath: string;
-  joinedNamedPath: string;
-  depth: number;
-  expandableKind?: "array" | "vector" | "vectorItem";
-  collectionLength?: number;
-};
-
-type FieldGroup = {
-  key: string;
-  path: Uint8Array;
-  namedPath: string[];
-  kind: "array" | "vector" | "vectorItem";
-  length: number;
-  encodedAs: string;
-};
-
 type EntityListPreferencesProps = {
   showEntityIndex: boolean;
   setShowEntityIndex: (value: boolean) => void;
 };
-
-function formatFieldPath(path: Uint8Array) {
-  return Array.from(path)
-    .map((part) => part.toString().padStart(4, " "))
-    .join("");
-}
-
-function getArrayTypeParts(encodedAs: string) {
-  const match = encodedAs.match(ARRAY_TYPE_RE);
-  if (!match) {
-    return undefined;
-  }
-
-  return {
-    elementType: match[1],
-    length: Number(match[2]),
-  };
-}
-
-function compareFieldPaths(a: Pick<EntityFieldLi, "path">, b: Pick<EntityFieldLi, "path">) {
-  for (let i = 0; i < Math.min(a.path.length, b.path.length); i++) {
-    if (a.path[i] !== b.path[i]) {
-      return a.path[i] - b.path[i];
-    }
-  }
-
-  return a.path.length - b.path.length;
-}
-
-function groupRow(group: FieldGroup, depth: number): WrappedEntityFieldLi {
-  const decodedAs = group.kind === "array" ? "Array" : group.kind === "vector" ? "Vector" : "Item";
-  return {
-    inner: {
-      path: group.path,
-      namedPath: group.namedPath,
-      value: group.kind === "vectorItem" ? "" : String(group.length),
-      encodedAs: group.encodedAs,
-      decodedAs,
-    },
-    joinedPath: formatFieldPath(group.path),
-    joinedNamedPath: group.key,
-    depth,
-    expandableKind: group.kind,
-    collectionLength: group.kind === "vectorItem" ? undefined : group.length,
-  };
-}
 
 // NOTE: keep this in sync with EntityFieldListPreferences
 function EntityListPreferences(props: EntityListPreferencesProps) {
@@ -359,173 +294,14 @@ function EntityFieldList() {
 
   const [expandedFieldGroups, setExpandedFieldGroups] = useState(() => new Set<string>());
 
-  const { entityFieldList, joinedPathMaxLen } = useMemo(() => {
-    let joinedPathMaxLen = 0;
-    const rows: WrappedEntityFieldLi[] = [];
-    const groups = new Map<string, FieldGroup>();
-    const vectorMaxIndexByKey = new Map<string, number>();
-    const emittedGroups = new Set<string>();
-
-    const sortedFields = rawEntityFieldList?.slice().sort(compareFieldPaths);
-
-    for (const entityField of sortedFields ?? []) {
-      const arrayType = getArrayTypeParts(entityField.encodedAs);
-      for (let i = 1; i < entityField.namedPath.length; i++) {
-        const part = entityField.namedPath[i];
-        if (!FIELD_INDEX_RE.test(part)) {
-          continue;
-        }
-
-        const groupNamedPath = entityField.namedPath.slice(0, i);
-        const groupKey = groupNamedPath.join(".");
-
-        if (i < entityField.namedPath.length - 1) {
-          groups.set(groupKey, {
-            key: groupKey,
-            path: entityField.path.slice(0, i),
-            namedPath: groupNamedPath,
-            kind: "vector",
-            length: 0,
-            encodedAs: "vector",
-          });
-
-          vectorMaxIndexByKey.set(
-            groupKey,
-            Math.max(vectorMaxIndexByKey.get(groupKey) ?? -1, Number(part)),
-          );
-
-          const itemNamedPath = entityField.namedPath.slice(0, i + 1);
-          const itemKey = itemNamedPath.join(".");
-          groups.set(itemKey, {
-            key: itemKey,
-            path: entityField.path.slice(0, i + 1),
-            namedPath: itemNamedPath,
-            kind: "vectorItem",
-            length: 0,
-            encodedAs: "item",
-          });
-        } else if (arrayType) {
-          groups.set(groupKey, {
-            key: groupKey,
-            path: entityField.path.slice(0, i),
-            namedPath: groupNamedPath,
-            kind: "array",
-            length: arrayType.length,
-            encodedAs: entityField.encodedAs,
-          });
-        } else {
-          groups.set(groupKey, {
-            key: groupKey,
-            path: entityField.path.slice(0, i),
-            namedPath: groupNamedPath,
-            kind: "vector",
-            length: 0,
-            encodedAs: "vector",
-          });
-
-          vectorMaxIndexByKey.set(
-            groupKey,
-            Math.max(vectorMaxIndexByKey.get(groupKey) ?? -1, Number(part)),
-          );
-        }
-      }
-    }
-
-    for (const [groupKey, maxIndex] of vectorMaxIndexByKey) {
-      const group = groups.get(groupKey);
-      if (group?.kind === "vector") {
-        group.length = maxIndex + 1;
-      }
-    }
-
-    const emitRow = (row: WrappedEntityFieldLi) => {
-      rows.push(row);
-      joinedPathMaxLen = Math.max(joinedPathMaxLen, row.joinedPath.length);
-    };
-
-    for (const entityField of sortedFields ?? []) {
-      const arrayType = getArrayTypeParts(entityField.encodedAs);
-      let leafEncodedAs = entityField.encodedAs;
-      let hiddenByCollapsedGroup = false;
-      let depth = 0;
-
-      for (let i = 1; i < entityField.namedPath.length; i++) {
-        const part = entityField.namedPath[i];
-        if (!FIELD_INDEX_RE.test(part)) {
-          continue;
-        }
-
-        const groupKey = entityField.namedPath.slice(0, i).join(".");
-        const group = groups.get(groupKey);
-        if (!group) {
-          continue;
-        }
-
-        if (!emittedGroups.has(groupKey)) {
-          emitRow(groupRow(group, depth));
-          emittedGroups.add(groupKey);
-        }
-
-        depth += 1;
-        if (!expandedFieldGroups.has(groupKey)) {
-          hiddenByCollapsedGroup = true;
-          break;
-        }
-
-        if (i === entityField.namedPath.length - 1 && group.kind === "array" && arrayType) {
-          leafEncodedAs = arrayType.elementType;
-        }
-
-        const itemKey = entityField.namedPath.slice(0, i + 1).join(".");
-        const itemGroup = groups.get(itemKey);
-        if (itemGroup?.kind !== "vectorItem") {
-          continue;
-        }
-
-        if (!emittedGroups.has(itemKey)) {
-          emitRow(groupRow(itemGroup, depth));
-          emittedGroups.add(itemKey);
-        }
-
-        depth += 1;
-        if (!expandedFieldGroups.has(itemKey)) {
-          hiddenByCollapsedGroup = true;
-          break;
-        }
-      }
-
-      if (hiddenByCollapsedGroup) {
-        continue;
-      }
-
-      emitRow({
-        inner: entityField,
-        joinedPath: formatFieldPath(entityField.path),
-        joinedNamedPath: entityField.namedPath.join("."),
-        depth,
-        expandableKind: undefined,
-      });
-
-      if (leafEncodedAs !== entityField.encodedAs) {
-        rows[rows.length - 1] = {
-          ...rows[rows.length - 1],
-          inner: {
-            path: entityField.path,
-            namedPath: entityField.namedPath,
-            value: entityField.value,
-            encodedAs: leafEncodedAs,
-            decodedAs: entityField.decodedAs,
-          },
-        };
-      }
-    }
-
-    return { entityFieldList: rows, joinedPathMaxLen };
-  }, [rawEntityFieldList, expandedFieldGroups]);
+  const { entityFieldList, joinedPathMaxLen } = useMemo(
+    () => buildEntityFieldRows(rawEntityFieldList, expandedFieldGroups),
+    [rawEntityFieldList, expandedFieldGroups],
+  );
 
   const [, startTransition] = useTransition();
   const [filteredEntityFieldList, setFinalEntityFieldList] = useState(entityFieldList);
-  const handleFilterUpdate: UpdateEventHandler<WrappedEntityFieldLi> = useCallback(
+  const handleFilterUpdate: UpdateEventHandler<EntityFieldRow> = useCallback(
     (entries, searchCmpFn) => {
       startTransition(() => {
         if (searchCmpFn) {

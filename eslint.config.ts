@@ -9,7 +9,7 @@ const tsconfigRootDir = dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig(
   {
-    ignores: ["dist/**", "target/**", "node_modules/**", "src/wasm-pkg/**"],
+    ignores: ["dist/**", "target/**", "node_modules/**", "src/generated/wasm/**"],
   },
   {
     files: ["**/*.{js,mjs,cjs}"],
