@@ -413,6 +413,20 @@ function EntityFieldList() {
             length: arrayType.length,
             encodedAs: entityField.encodedAs,
           });
+        } else {
+          groups.set(groupKey, {
+            key: groupKey,
+            path: entityField.path.slice(0, i),
+            namedPath: groupNamedPath,
+            kind: "vector",
+            length: 0,
+            encodedAs: "vector",
+          });
+
+          vectorMaxIndexByKey.set(
+            groupKey,
+            Math.max(vectorMaxIndexByKey.get(groupKey) ?? -1, Number(part)),
+          );
         }
       }
     }
