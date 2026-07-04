@@ -25,7 +25,7 @@ const DEFAULT_SHOW_FIELD_ENCODED_TYPE = true;
 const DEFAULT_SHOW_FIELD_DECODED_TYPE = false;
 const DEFAULT_SHOW_FIELD_PATH = false;
 
-const ARRAY_INDEX_RE = /^\d{4}$/;
+const FIELD_INDEX_RE = /^\d{4}$/;
 const ARRAY_TYPE_RE = /^(.*)\[(\d+)\]$/;
 
 type WrappedEntityFieldLi = {
@@ -33,8 +33,17 @@ type WrappedEntityFieldLi = {
   joinedPath: string;
   joinedNamedPath: string;
   depth: number;
-  isArrayParent: boolean;
-  arrayLength?: number;
+  expandableKind?: "array" | "vector";
+  collectionLength?: number;
+};
+
+type FieldGroup = {
+  key: string;
+  path: Uint8Array;
+  namedPath: string[];
+  kind: "array" | "vector";
+  length: number;
+  encodedAs: string;
 };
 
 type EntityListPreferencesProps = {
@@ -60,29 +69,31 @@ function getArrayTypeParts(encodedAs: string) {
   };
 }
 
-function arrayParentKey(field: EntityFieldLi) {
-  const arrayType = getArrayTypeParts(field.encodedAs);
-  const lastPart = field.namedPath[field.namedPath.length - 1];
-
-  if (!arrayType || !lastPart || !ARRAY_INDEX_RE.test(lastPart)) {
-    return undefined;
-  }
-
-  return field.namedPath.slice(0, -1).join(".");
-}
-
-function compareFieldRows(a: WrappedEntityFieldLi, b: WrappedEntityFieldLi) {
-  for (let i = 0; i < Math.min(a.inner.path.length, b.inner.path.length); i++) {
-    if (a.inner.path[i] !== b.inner.path[i]) {
-      return a.inner.path[i] - b.inner.path[i];
+function compareFieldPaths(a: Pick<EntityFieldLi, "path">, b: Pick<EntityFieldLi, "path">) {
+  for (let i = 0; i < Math.min(a.path.length, b.path.length); i++) {
+    if (a.path[i] !== b.path[i]) {
+      return a.path[i] - b.path[i];
     }
   }
 
-  if (a.inner.path.length !== b.inner.path.length) {
-    return a.inner.path.length - b.inner.path.length;
-  }
+  return a.path.length - b.path.length;
+}
 
-  return a.joinedNamedPath.localeCompare(b.joinedNamedPath);
+function groupRow(group: FieldGroup, depth: number): WrappedEntityFieldLi {
+  return {
+    inner: {
+      path: group.path,
+      namedPath: group.namedPath,
+      value: String(group.length),
+      encodedAs: group.encodedAs,
+      decodedAs: group.kind === "array" ? "Array" : "Vector",
+    },
+    joinedPath: formatFieldPath(group.path),
+    joinedNamedPath: group.key,
+    depth,
+    expandableKind: group.kind,
+    collectionLength: group.length,
+  };
 }
 
 // NOTE: keep this in sync with EntityFieldListPreferences
@@ -311,89 +322,129 @@ function EntityFieldList() {
     return tmpEntityFieldList;
   }, [demParser, demView, demSelectedEntityIndex, demTick]);
 
-  const [expandedArrays, setExpandedArrays] = useState(() => new Set<string>());
+  const [expandedFieldGroups, setExpandedFieldGroups] = useState(() => new Set<string>());
 
   const { entityFieldList, joinedPathMaxLen } = useMemo(() => {
     let joinedPathMaxLen = 0;
     const rows: WrappedEntityFieldLi[] = [];
-    const arrayRowsByKey = new Map<string, WrappedEntityFieldLi>();
+    const groups = new Map<string, FieldGroup>();
+    const vectorMaxIndexByKey = new Map<string, number>();
+    const emittedGroups = new Set<string>();
 
-    const sortedFields = rawEntityFieldList?.slice().sort((a, b) => {
-      for (let i = 0; i < Math.min(a.path.length, b.path.length); i++) {
-        if (a.path[i] !== b.path[i]) {
-          return a.path[i] - b.path[i];
-        }
-      }
-
-      return a.path.length - b.path.length;
-    });
+    const sortedFields = rawEntityFieldList?.slice().sort(compareFieldPaths);
 
     for (const entityField of sortedFields ?? []) {
-      const parentKey = arrayParentKey(entityField);
       const arrayType = getArrayTypeParts(entityField.encodedAs);
-
-      if (parentKey && arrayType) {
-        let arrayRow = arrayRowsByKey.get(parentKey);
-
-        if (!arrayRow) {
-          const parentPath = entityField.path.slice(0, -1);
-          const parentNamedPath = entityField.namedPath.slice(0, -1);
-          arrayRow = {
-            inner: {
-              path: parentPath,
-              namedPath: parentNamedPath,
-              value: String(arrayType.length),
-              encodedAs: entityField.encodedAs,
-              decodedAs: "Array",
-            },
-            joinedPath: formatFieldPath(parentPath),
-            joinedNamedPath: parentKey,
-            depth: 0,
-            isArrayParent: true,
-            arrayLength: arrayType.length,
-          };
-          arrayRowsByKey.set(parentKey, arrayRow);
-          rows.push(arrayRow);
-          joinedPathMaxLen = Math.max(joinedPathMaxLen, arrayRow.joinedPath.length);
-        }
-
-        if (!expandedArrays.has(parentKey)) {
+      for (let i = 1; i < entityField.namedPath.length; i++) {
+        const part = entityField.namedPath[i];
+        if (!FIELD_INDEX_RE.test(part)) {
           continue;
         }
 
-        const childRow: WrappedEntityFieldLi = {
+        const groupNamedPath = entityField.namedPath.slice(0, i);
+        const groupKey = groupNamedPath.join(".");
+
+        if (i < entityField.namedPath.length - 1) {
+          groups.set(groupKey, {
+            key: groupKey,
+            path: entityField.path.slice(0, i),
+            namedPath: groupNamedPath,
+            kind: "vector",
+            length: 0,
+            encodedAs: "vector",
+          });
+
+          vectorMaxIndexByKey.set(
+            groupKey,
+            Math.max(vectorMaxIndexByKey.get(groupKey) ?? -1, Number(part)),
+          );
+        } else if (arrayType) {
+          groups.set(groupKey, {
+            key: groupKey,
+            path: entityField.path.slice(0, i),
+            namedPath: groupNamedPath,
+            kind: "array",
+            length: arrayType.length,
+            encodedAs: entityField.encodedAs,
+          });
+        }
+      }
+    }
+
+    for (const [groupKey, maxIndex] of vectorMaxIndexByKey) {
+      const group = groups.get(groupKey);
+      if (group?.kind === "vector") {
+        group.length = maxIndex + 1;
+      }
+    }
+
+    const emitRow = (row: WrappedEntityFieldLi) => {
+      rows.push(row);
+      joinedPathMaxLen = Math.max(joinedPathMaxLen, row.joinedPath.length);
+    };
+
+    for (const entityField of sortedFields ?? []) {
+      const arrayType = getArrayTypeParts(entityField.encodedAs);
+      let leafEncodedAs = entityField.encodedAs;
+      let hiddenByCollapsedGroup = false;
+      let depth = 0;
+
+      for (let i = 1; i < entityField.namedPath.length; i++) {
+        const part = entityField.namedPath[i];
+        if (!FIELD_INDEX_RE.test(part)) {
+          continue;
+        }
+
+        const groupKey = entityField.namedPath.slice(0, i).join(".");
+        const group = groups.get(groupKey);
+        if (!group) {
+          continue;
+        }
+
+        if (!emittedGroups.has(groupKey)) {
+          emitRow(groupRow(group, depth));
+          emittedGroups.add(groupKey);
+        }
+
+        depth += 1;
+        if (!expandedFieldGroups.has(groupKey)) {
+          hiddenByCollapsedGroup = true;
+          break;
+        }
+
+        if (i === entityField.namedPath.length - 1 && group.kind === "array" && arrayType) {
+          leafEncodedAs = arrayType.elementType;
+        }
+      }
+
+      if (hiddenByCollapsedGroup) {
+        continue;
+      }
+
+      emitRow({
+        inner: entityField,
+        joinedPath: formatFieldPath(entityField.path),
+        joinedNamedPath: entityField.namedPath.join("."),
+        depth,
+        expandableKind: undefined,
+      });
+
+      if (leafEncodedAs !== entityField.encodedAs) {
+        rows[rows.length - 1] = {
+          ...rows[rows.length - 1],
           inner: {
             path: entityField.path,
             namedPath: entityField.namedPath,
             value: entityField.value,
-            encodedAs: arrayType.elementType,
+            encodedAs: leafEncodedAs,
             decodedAs: entityField.decodedAs,
           },
-          joinedPath: formatFieldPath(entityField.path),
-          joinedNamedPath: entityField.namedPath.join("."),
-          depth: 1,
-          isArrayParent: false,
         };
-        rows.push(childRow);
-        joinedPathMaxLen = Math.max(joinedPathMaxLen, childRow.joinedPath.length);
-        continue;
       }
-
-      const row: WrappedEntityFieldLi = {
-        inner: entityField,
-        joinedPath: formatFieldPath(entityField.path),
-        joinedNamedPath: entityField.namedPath.join("."),
-        depth: 0,
-        isArrayParent: false,
-      };
-      rows.push(row);
-      joinedPathMaxLen = Math.max(joinedPathMaxLen, row.joinedPath.length);
     }
 
-    rows.sort(compareFieldRows);
-
     return { entityFieldList: rows, joinedPathMaxLen };
-  }, [rawEntityFieldList, expandedArrays]);
+  }, [rawEntityFieldList, expandedFieldGroups]);
 
   const [, startTransition] = useTransition();
   const [filteredEntityFieldList, setFinalEntityFieldList] = useState(entityFieldList);
@@ -424,15 +475,15 @@ function EntityFieldList() {
   const [showFieldPath, setShowFieldPath] = useState(DEFAULT_SHOW_FIELD_PATH);
 
   const [, setDemSelectedEntityIndex] = useAtom(demSelectedEntityIndexAtom);
-  const handleArrayToggle = useCallback((arrayName: string) => {
-    setExpandedArrays((prevExpandedArrays) => {
-      const nextExpandedArrays = new Set(prevExpandedArrays);
-      if (nextExpandedArrays.has(arrayName)) {
-        nextExpandedArrays.delete(arrayName);
+  const handleFieldGroupToggle = useCallback((groupName: string) => {
+    setExpandedFieldGroups((prevExpandedGroups) => {
+      const nextExpandedGroups = new Set(prevExpandedGroups);
+      if (nextExpandedGroups.has(groupName)) {
+        nextExpandedGroups.delete(groupName);
       } else {
-        nextExpandedArrays.add(arrayName);
+        nextExpandedGroups.add(groupName);
       }
-      return nextExpandedArrays;
+      return nextExpandedGroups;
     });
   }, []);
   const handleClick = useCallback(
@@ -483,11 +534,12 @@ function EntityFieldList() {
         <ul className="w-full h-full relative" style={{ height: virtualizer.getTotalSize() }}>
           {virtualizer.getVirtualItems().map((virtualItem) => {
             const entityFieldItem = filteredEntityFieldList[virtualItem.index];
-            const arrayExpanded =
-              entityFieldItem.isArrayParent && expandedArrays.has(entityFieldItem.joinedNamedPath);
+            const groupExpanded =
+              !!entityFieldItem.expandableKind &&
+              expandedFieldGroups.has(entityFieldItem.joinedNamedPath);
 
             const handle =
-              !entityFieldItem.isArrayParent &&
+              !entityFieldItem.expandableKind &&
               entityFieldItem.inner.encodedAs.startsWith("CHandle");
             const handleValid = handle && isEHandleValid(+entityFieldItem.inner.value);
             const linkedEntIdx = handleValid ? eHandleToIndex(+entityFieldItem.inner.value) : null;
@@ -508,16 +560,16 @@ function EntityFieldList() {
               >
                 <span className="whitespace-nowrap gap-x-[1ch] flex items-center">
                   <span className="inline-flex size-4 items-center justify-center">
-                    {entityFieldItem.isArrayParent && (
+                    {!!entityFieldItem.expandableKind && (
                       <button
                         className="inline-flex size-4 items-center justify-center rounded hover:bg-neutral-500/30"
                         type="button"
                         onClick={(ev) => {
                           ev.stopPropagation();
-                          handleArrayToggle(entityFieldItem.joinedNamedPath);
+                          handleFieldGroupToggle(entityFieldItem.joinedNamedPath);
                         }}
                       >
-                        {arrayExpanded ? (
+                        {groupExpanded ? (
                           <ChevronDownIcon className="size-3" />
                         ) : (
                           <ChevronRightIcon className="size-3" />
@@ -550,9 +602,9 @@ function EntityFieldList() {
                       )}
                     </>
                   )}
-                  <span className={cn("text-fg", entityFieldItem.isArrayParent && "opacity-60")}>
-                    {entityFieldItem.isArrayParent
-                      ? `length ${entityFieldItem.arrayLength ?? entityFieldItem.inner.value}`
+                  <span className={cn("text-fg", entityFieldItem.expandableKind && "opacity-60")}>
+                    {entityFieldItem.expandableKind
+                      ? `length ${entityFieldItem.collectionLength ?? entityFieldItem.inner.value}`
                       : entityFieldItem.inner.value}
                   </span>
                   {handle &&
