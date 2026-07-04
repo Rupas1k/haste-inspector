@@ -10,12 +10,7 @@ import { CogIcon, Link2Icon, Link2OffIcon } from "lucide-react";
 import { useCallback, useMemo, useRef, useState, useTransition } from "react";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import DemFilterBar, { type UpdateEventHandler } from "./DemFilterBar";
-import {
-  demParserAtom,
-  demSelectedEntityIndexAtom,
-  demTickAtom,
-  demViewAtom,
-} from "./atoms";
+import { demParserAtom, demSelectedEntityIndexAtom, demTickAtom, demViewAtom } from "./atoms";
 import { Button } from "./lib/Button";
 import * as DropdownMenu from "./lib/DropdownMenu";
 import { ScrollArea } from "./lib/ScrollArea";
@@ -59,10 +54,7 @@ function EntityListPreferences(props: EntityListPreferencesProps) {
           // NOTE: following classes are stolen from tooltip
           className="bg-white dark:bg-black rounded z-10"
         >
-          <DropdownMenu.CheckboxItem
-            checked={showEntityIndex}
-            onCheckedChange={setShowEntityIndex}
-          >
+          <DropdownMenu.CheckboxItem checked={showEntityIndex} onCheckedChange={setShowEntityIndex}>
             entity index
           </DropdownMenu.CheckboxItem>
         </DropdownMenu.Content>
@@ -76,7 +68,7 @@ function EntityList() {
   const [demView] = useAtom(demViewAtom);
   const [demTick] = useAtom(demTickAtom);
   const entityList = useMemo(() => {
-    demTick; // trick eslint
+    void demTick;
 
     let entityList: EntityLi[] | undefined;
     if (demView === "entities") {
@@ -90,20 +82,15 @@ function EntityList() {
 
   const [, startTransition] = useTransition();
   const [filteredEntityList, setFinalEntityList] = useState(entityList);
-  const handleFilterUpdate: UpdateEventHandler<EntityLi> = useCallback(
-    (entries, searchCmpFn) => {
-      startTransition(() => {
-        if (searchCmpFn) {
-          setFinalEntityList(
-            entries?.filter((entry) => searchCmpFn(entry.name)),
-          );
-        } else {
-          setFinalEntityList(entries);
-        }
-      });
-    },
-    [],
-  );
+  const handleFilterUpdate: UpdateEventHandler<EntityLi> = useCallback((entries, searchCmpFn) => {
+    startTransition(() => {
+      if (searchCmpFn) {
+        setFinalEntityList(entries?.filter((entry) => searchCmpFn(entry.name)));
+      } else {
+        setFinalEntityList(entries);
+      }
+    });
+  }, []);
 
   const viewportRef = useRef<HTMLDivElement>(null);
   const virtualizer = useVirtualizer({
@@ -112,9 +99,7 @@ function EntityList() {
     estimateSize: () => LI_HEIGHT,
   });
 
-  const [demSelectedEntityIndex, setDemSelectedEntityIndex] = useAtom(
-    demSelectedEntityIndexAtom,
-  );
+  const [demSelectedEntityIndex, setDemSelectedEntityIndex] = useAtom(demSelectedEntityIndexAtom);
   const handleClick = useCallback(
     (ev: React.MouseEvent<HTMLLIElement>) => {
       const entityIndex = +ev.currentTarget.dataset.entidx!;
@@ -127,9 +112,7 @@ function EntityList() {
     [setDemSelectedEntityIndex],
   );
 
-  const [showEntityIndex, setShowEntityIndex] = useState(
-    DEFAULT_SHOW_ENTITY_INDEX,
-  );
+  const [showEntityIndex, setShowEntityIndex] = useState(DEFAULT_SHOW_ENTITY_INDEX);
 
   return (
     <div className="w-full h-full flex flex-col">
@@ -152,10 +135,7 @@ function EntityList() {
         <p className="m-2 text-fg-subtle">no entities, try moving the slider</p>
       )}
       <ScrollArea className="w-full grow" viewportRef={viewportRef}>
-        <ul
-          className="w-full h-full relative"
-          style={{ height: virtualizer.getTotalSize() }}
-        >
+        <ul className="w-full h-full relative" style={{ height: virtualizer.getTotalSize() }}>
           {virtualizer.getVirtualItems().map((virtualItem) => {
             const entityItem = filteredEntityList![virtualItem.index];
             const entitySelected = demSelectedEntityIndex === entityItem?.index;
@@ -174,10 +154,7 @@ function EntityList() {
                 onClick={handleClick}
               >
                 {showEntityIndex && (
-                  <span
-                    className="opacity-40 text-end mr-2"
-                    style={{ minWidth: "4ch" }}
-                  >
+                  <span className="opacity-40 text-end mr-2" style={{ minWidth: "4ch" }}>
                     {entityItem.index}
                   </span>
                 )}
@@ -223,9 +200,7 @@ function EntityFieldListPreferences(props: EntityFieldListPreferencesProps) {
         <span className="inline-flex">
           <Tooltip content="display preferences">
             <Button size="small" className={cn(active && "bg-neutral-500/30")}>
-              <CogIcon
-                className={cn("size-4", !active && "stroke-fg-subtle")}
-              />
+              <CogIcon className={cn("size-4", !active && "stroke-fg-subtle")} />
             </Button>
           </Tooltip>
         </span>
@@ -237,10 +212,7 @@ function EntityFieldListPreferences(props: EntityFieldListPreferencesProps) {
           // NOTE: following classes are stolen from tooltip
           className="bg-white dark:bg-black rounded z-10"
         >
-          <DropdownMenu.CheckboxItem
-            checked={showFieldPath}
-            onCheckedChange={setShowFieldPath}
-          >
+          <DropdownMenu.CheckboxItem checked={showFieldPath} onCheckedChange={setShowFieldPath}>
             field path
           </DropdownMenu.CheckboxItem>
           <DropdownMenu.CheckboxItem
@@ -268,7 +240,7 @@ function EntityFieldList() {
   const [demTick] = useAtom(demTickAtom);
 
   const { entityFieldList, joinedPathMaxLen } = useMemo(() => {
-    demTick; // trick eslint
+    void demTick;
 
     if (demSelectedEntityIndex === undefined) {
       return {};
@@ -278,9 +250,7 @@ function EntityFieldList() {
     if (demView === "entities") {
       tmpEntityFieldList = demParser?.listEntityFields(demSelectedEntityIndex);
     } else if (demView === "baselineEntities") {
-      tmpEntityFieldList = demParser?.listBaselineEntityFields(
-        demSelectedEntityIndex,
-      );
+      tmpEntityFieldList = demParser?.listBaselineEntityFields(demSelectedEntityIndex);
     }
 
     let joinedPathMaxLen = 0;
@@ -299,11 +269,7 @@ function EntityFieldList() {
 
     entityFieldList?.sort((a, b) => {
       // compare path arrays element by element
-      for (
-        let i = 0;
-        i < Math.min(a.inner.path.length, b.inner.path.length);
-        i++
-      ) {
+      for (let i = 0; i < Math.min(a.inner.path.length, b.inner.path.length); i++) {
         if (a.inner.path[i] !== b.inner.path[i]) {
           return a.inner.path[i] - b.inner.path[i];
         }
@@ -319,20 +285,19 @@ function EntityFieldList() {
   type WrappedEntityFieldLi = NonNullable<typeof entityFieldList>[0];
 
   const [, startTransition] = useTransition();
-  const [filteredEntityFieldList, setFinalEntityFieldList] =
-    useState(entityFieldList);
-  const handleFilterUpdate: UpdateEventHandler<WrappedEntityFieldLi> =
-    useCallback((entries, searchCmpFn) => {
+  const [filteredEntityFieldList, setFinalEntityFieldList] = useState(entityFieldList);
+  const handleFilterUpdate: UpdateEventHandler<WrappedEntityFieldLi> = useCallback(
+    (entries, searchCmpFn) => {
       startTransition(() => {
         if (searchCmpFn) {
-          setFinalEntityFieldList(
-            entries?.filter((entry) => searchCmpFn(entry.joinedNamedPath)),
-          );
+          setFinalEntityFieldList(entries?.filter((entry) => searchCmpFn(entry.joinedNamedPath)));
         } else {
           setFinalEntityFieldList(entries);
         }
       });
-    }, []);
+    },
+    [],
+  );
 
   const viewportRef = useRef<HTMLDivElement>(null);
   const virtualizer = useVirtualizer({
@@ -341,12 +306,8 @@ function EntityFieldList() {
     estimateSize: () => LI_HEIGHT,
   });
 
-  const [showFieldEncodedType, setShowFieldEncodedType] = useState(
-    DEFAULT_SHOW_FIELD_ENCODED_TYPE,
-  );
-  const [showFieldDecodedType, setShowFieldDecodedType] = useState(
-    DEFAULT_SHOW_FIELD_DECODED_TYPE,
-  );
+  const [showFieldEncodedType, setShowFieldEncodedType] = useState(DEFAULT_SHOW_FIELD_ENCODED_TYPE);
+  const [showFieldDecodedType, setShowFieldDecodedType] = useState(DEFAULT_SHOW_FIELD_DECODED_TYPE);
   const [showFieldPath, setShowFieldPath] = useState(DEFAULT_SHOW_FIELD_PATH);
 
   const [, setDemSelectedEntityIndex] = useAtom(demSelectedEntityIndexAtom);
@@ -395,20 +356,13 @@ function EntityFieldList() {
         </p>
       )}
       <ScrollArea className="w-full grow" viewportRef={viewportRef}>
-        <ul
-          className="w-full h-full relative"
-          style={{ height: virtualizer.getTotalSize() }}
-        >
+        <ul className="w-full h-full relative" style={{ height: virtualizer.getTotalSize() }}>
           {virtualizer.getVirtualItems().map((virtualItem) => {
             const entityFieldItem = filteredEntityFieldList![virtualItem.index];
 
-            const handle =
-              entityFieldItem.inner.encodedAs.startsWith("CHandle");
-            const handleValid =
-              handle && isEHandleValid(+entityFieldItem.inner.value);
-            const linkedEntIdx = handleValid
-              ? eHandleToIndex(+entityFieldItem.inner.value)
-              : null;
+            const handle = entityFieldItem.inner.encodedAs.startsWith("CHandle");
+            const handleValid = handle && isEHandleValid(+entityFieldItem.inner.value);
+            const linkedEntIdx = handleValid ? eHandleToIndex(+entityFieldItem.inner.value) : null;
 
             return (
               <li
@@ -438,17 +392,13 @@ function EntityFieldList() {
                   {(showFieldEncodedType || showFieldDecodedType) && (
                     <>
                       {showFieldEncodedType && (
-                        <span className="opacity-40">
-                          {entityFieldItem.inner.encodedAs || "_"}
-                        </span>
+                        <span className="opacity-40">{entityFieldItem.inner.encodedAs || "_"}</span>
                       )}
                       {showFieldEncodedType && showFieldDecodedType && (
                         <span className="opacity-40">{"->"}</span>
                       )}
                       {showFieldDecodedType && (
-                        <span className="opacity-40">
-                          {entityFieldItem.inner.decodedAs}
-                        </span>
+                        <span className="opacity-40">{entityFieldItem.inner.decodedAs}</span>
                       )}
                     </>
                   )}

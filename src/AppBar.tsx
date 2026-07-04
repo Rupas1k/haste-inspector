@@ -43,10 +43,7 @@ function DemViewSelection() {
   return (
     <DropdownMenu.Root open={demViewOpen} onOpenChange={setDemViewOpen}>
       <DropdownMenu.Trigger asChild>
-        <Button
-          size="small"
-          className={cn("px-2", demViewOpen && "bg-neutral-500/30")}
-        >
+        <Button size="small" className={cn("px-2", demViewOpen && "bg-neutral-500/30")}>
           {demView === "entities" && "entities"}
           {demView === "baselineEntities" && "baseline entities"}
           {demView === "stringTables" && "string tables"}
@@ -62,19 +59,19 @@ function DemViewSelection() {
         >
           <DropdownMenu.CheckboxItem
             checked={demView === "entities"}
-            onCheckedChange={(_value) => setDemView("entities")}
+            onCheckedChange={() => setDemView("entities")}
           >
             entities
           </DropdownMenu.CheckboxItem>
           <DropdownMenu.CheckboxItem
             checked={demView === "baselineEntities"}
-            onCheckedChange={(_value) => setDemView("baselineEntities")}
+            onCheckedChange={() => setDemView("baselineEntities")}
           >
             baseline entities
           </DropdownMenu.CheckboxItem>
           <DropdownMenu.CheckboxItem
             checked={demView === "stringTables"}
-            onCheckedChange={(_value) => setDemView("stringTables")}
+            onCheckedChange={() => setDemView("stringTables")}
           >
             string tables
           </DropdownMenu.CheckboxItem>
@@ -135,11 +132,7 @@ function UiSection() {
       <div className="w-px h-4 bg-divider" />
       <Tooltip content={darkMode ? "light mode" : "dark mode"}>
         <Button size="small" onClick={() => toggleDarkMode()}>
-          {darkMode ? (
-            <SunIcon className="size-4" />
-          ) : (
-            <MoonIcon className="size-4" />
-          )}
+          {darkMode ? <SunIcon className="size-4" /> : <MoonIcon className="size-4" />}
         </Button>
       </Tooltip>
       <Tooltip

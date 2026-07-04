@@ -2,11 +2,7 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 import { useAtom } from "jotai";
 import { useCallback, useMemo, useRef } from "react";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
-import {
-  demParserAtom,
-  demSelectedStringTableNameAtom,
-  demTickAtom,
-} from "./atoms";
+import { demParserAtom, demSelectedStringTableNameAtom, demTickAtom } from "./atoms";
 import { ScrollArea } from "./lib/ScrollArea";
 import { cn } from "./lib/style";
 
@@ -22,7 +18,7 @@ function StringTableList() {
   const [demParser] = useAtom(demParserAtom);
   const [demTick] = useAtom(demTickAtom);
   const stringTableList = useMemo(() => {
-    demTick; // trick eslint
+    void demTick;
 
     return demParser?.listStringTables();
   }, [demParser, demTick]);
@@ -50,19 +46,13 @@ function StringTableList() {
   return (
     <div className="w-full h-full flex flex-col">
       {!stringTableList?.length && (
-        <p className="m-2 text-fg-subtle">
-          no string tables, try moving the slider
-        </p>
+        <p className="m-2 text-fg-subtle">no string tables, try moving the slider</p>
       )}
       <ScrollArea className="w-full grow" viewportRef={viewportRef}>
-        <ul
-          className="w-full h-full relative"
-          style={{ height: virtualizer.getTotalSize() }}
-        >
+        <ul className="w-full h-full relative" style={{ height: virtualizer.getTotalSize() }}>
           {virtualizer.getVirtualItems().map((virtualItem) => {
             const stringTable = stringTableList![virtualItem.index];
-            const stringTableSelected =
-              demSelectedStringTableName === stringTable.name;
+            const stringTableSelected = demSelectedStringTableName === stringTable.name;
             return (
               // TODO: create list item conponent or something (deduplicate)
               <li
@@ -96,28 +86,26 @@ function StringTableItemList() {
   const [demTick] = useAtom(demTickAtom);
 
   const stringTableItemList = useMemo(() => {
-    demTick; // trick eslint
+    void demTick;
 
     if (demSelectedStringTableName === undefined) {
       return undefined;
     }
 
     const textDecoder = new TextDecoder();
-    return demParser
-      ?.listStringTableItems(demSelectedStringTableName)
-      ?.map((stringTableItem) => {
-        const decodedString = stringTableItem.string
-          ? textDecoder.decode(stringTableItem.string)
-          : null;
-        const decodedUserData = stringTableItem.userData
-          ? Array.from(stringTableItem.userData).map(byteToHex).join(" ")
-          : null;
-        return {
-          decodedString,
-          decodedUserData,
-          inner: stringTableItem,
-        };
-      });
+    return demParser?.listStringTableItems(demSelectedStringTableName)?.map((stringTableItem) => {
+      const decodedString = stringTableItem.string
+        ? textDecoder.decode(stringTableItem.string)
+        : null;
+      const decodedUserData = stringTableItem.userData
+        ? Array.from(stringTableItem.userData).map(byteToHex).join(" ")
+        : null;
+      return {
+        decodedString,
+        decodedUserData,
+        inner: stringTableItem,
+      };
+    });
   }, [demParser, demSelectedStringTableName, demTick]);
 
   const viewportRef = useRef<HTMLDivElement>(null);
@@ -134,17 +122,13 @@ function StringTableItemList() {
           to view table items, select a table from the list of tables
         </p>
       )}
-      {demSelectedStringTableName !== undefined &&
-        !stringTableItemList?.length && (
-          <p className="m-2 text-fg-subtle">
-            {demSelectedStringTableName} string table appears to be empty
-          </p>
-        )}
+      {demSelectedStringTableName !== undefined && !stringTableItemList?.length && (
+        <p className="m-2 text-fg-subtle">
+          {demSelectedStringTableName} string table appears to be empty
+        </p>
+      )}
       <ScrollArea className="w-full grow" viewportRef={viewportRef}>
-        <ul
-          className="w-full h-full relative"
-          style={{ height: virtualizer.getTotalSize() }}
-        >
+        <ul className="w-full h-full relative" style={{ height: virtualizer.getTotalSize() }}>
           {virtualizer.getVirtualItems().map((virtualItem) => {
             const stringTableItem = stringTableItemList![virtualItem.index];
 
@@ -160,14 +144,10 @@ function StringTableItemList() {
                 }}
               >
                 <span>
-                  {stringTableItem.decodedString || (
-                    <span className="opacity-40">{"<empty>"}</span>
-                  )}
+                  {stringTableItem.decodedString || <span className="opacity-40">{"<empty>"}</span>}
                 </span>
                 {stringTableItem.decodedUserData && (
-                  <span className="opacity-60">
-                    {stringTableItem.decodedUserData}
-                  </span>
+                  <span className="opacity-60">{stringTableItem.decodedUserData}</span>
                 )}
               </li>
             );

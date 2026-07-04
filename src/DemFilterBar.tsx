@@ -7,6 +7,8 @@ import { cn } from "./lib/style";
 import { useElementSize } from "./lib/useElementSize";
 import { useEventCallback } from "./lib/useEventCallback";
 
+const errorMessage = (error: unknown) => (error instanceof Error ? error.message : String(error));
+
 export type SearchCmpFn = (value: string) => boolean;
 export type UpdateEventHandler<Entry> = (
   entries: Entry[] | undefined,
@@ -32,7 +34,7 @@ function getSearchCmpFn(
     try {
       const regex = new RegExp(finalSearchQuery, matchCase ? undefined : "i");
       return regex.test.bind(regex);
-    } catch (error) {
+    } catch {
       return undefined;
     }
   }
@@ -55,20 +57,13 @@ type DemFilterBarProps<Entry> = {
 } & React.HTMLAttributes<HTMLDivElement>;
 
 export default function DemFilterBar<Entry>(props: DemFilterBarProps<Entry>) {
-  const {
-    entries,
-    onUpdate,
-    updateDelay,
-    placehoder,
-    className,
-    endAdornment,
-    ...restProps
-  } = props;
+  const { entries, onUpdate, updateDelay, placehoder, className, endAdornment, ...restProps } =
+    props;
 
   const [searchQuery, setSearchQuery] = useState("");
   const [matchCase, setMatchCase] = useState(false);
   const [testRegex, setTestRegex] = useState(false);
-  const [regexError, setRegexError] = useState<unknown | undefined>(undefined);
+  const [regexError, setRegexError] = useState<unknown>(undefined);
 
   const applyUpdate = useEventCallback(() => {
     const searchQueryCmpFn = getSearchCmpFn(searchQuery, matchCase, testRegex);
@@ -77,7 +72,7 @@ export default function DemFilterBar<Entry>(props: DemFilterBarProps<Entry>) {
 
   const firstRenderRef = useRef(true);
   useEffect(() => {
-    entries; // trick eslint
+    void entries;
     if (!firstRenderRef.current) {
       applyUpdate();
     }
@@ -88,23 +83,20 @@ export default function DemFilterBar<Entry>(props: DemFilterBarProps<Entry>) {
     () => debounce(applyUpdate, updateDelay),
     [applyUpdate, updateDelay],
   );
-  useEffect(() => applyUpdateDebounced.clear, [applyUpdateDebounced]);
+  useEffect(() => () => applyUpdateDebounced.clear(), [applyUpdateDebounced]);
 
-  const maybeUpdateRegexError = useCallback(
-    (nextTestRegex: boolean, nextSearchQuery: string) => {
-      if (!nextTestRegex) {
-        setRegexError(undefined);
-        return;
-      }
-      try {
-        new RegExp(nextSearchQuery);
-        setRegexError(undefined);
-      } catch (error) {
-        setRegexError(error);
-      }
-    },
-    [],
-  );
+  const maybeUpdateRegexError = useCallback((nextTestRegex: boolean, nextSearchQuery: string) => {
+    if (!nextTestRegex) {
+      setRegexError(undefined);
+      return;
+    }
+    try {
+      new RegExp(nextSearchQuery);
+      setRegexError(undefined);
+    } catch (error) {
+      setRegexError(error);
+    }
+  }, []);
 
   const handleSearchQueryChange = useCallback(
     (ev: React.ChangeEvent<HTMLInputElement>) => {
@@ -161,19 +153,14 @@ export default function DemFilterBar<Entry>(props: DemFilterBarProps<Entry>) {
         autoCapitalize="off"
         spellCheck={false}
       />
-      <div
-        ref={endAdornmentsWrapperRef}
-        className="absolute right-1 flex items-center gap-x-1"
-      >
+      <div ref={endAdornmentsWrapperRef} className="absolute right-1 flex items-center gap-x-1">
         <Tooltip content="match case">
           <Button
             size="small"
             className={cn(matchCase && "bg-neutral-500/30")}
             onClick={handleMatchCaseClick}
           >
-            <CaseSensitiveIcon
-              className={cn("size-4", !matchCase && "stroke-fg-subtle")}
-            />
+            <CaseSensitiveIcon className={cn("size-4", !matchCase && "stroke-fg-subtle")} />
           </Button>
         </Tooltip>
         <Tooltip content="use regex">
@@ -182,16 +169,14 @@ export default function DemFilterBar<Entry>(props: DemFilterBarProps<Entry>) {
             className={cn(testRegex && "bg-neutral-500/30")}
             onClick={handleTestRegexClick}
           >
-            <RegexIcon
-              className={cn("size-4", !testRegex && "stroke-fg-subtle")}
-            />
+            <RegexIcon className={cn("size-4", !testRegex && "stroke-fg-subtle")} />
           </Button>
         </Tooltip>
         {endAdornment}
       </div>
       {!!regexError && (
         <p className="absolute top-full bg-red-900 border border-1 border-t-0 border-red-500 z-10 px-2 py-2 text-sm w-full">
-          {`${regexError}`}
+          {errorMessage(regexError)}
         </p>
       )}
     </div>

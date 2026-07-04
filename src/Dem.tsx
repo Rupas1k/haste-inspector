@@ -7,6 +7,8 @@ import DemStringTables from "./DemStringTables";
 import { demFileAtom, demParserAtom, demTickAtom, demViewAtom } from "./atoms";
 import { Tooltip } from "./lib/Tooltip";
 
+const errorMessage = (error: unknown) => (error instanceof Error ? error.message : String(error));
+
 function readFileToBytes(file: File) {
   return new Promise<Uint8Array>((resolve, reject) => {
     const fileReader = new FileReader();
@@ -18,7 +20,7 @@ function readFileToBytes(file: File) {
       }
     };
     fileReader.onerror = () => {
-      reject(fileReader.error);
+      reject(fileReader.error ?? new Error("failed to read file"));
     };
     fileReader.readAsArrayBuffer(file);
   });
@@ -53,7 +55,7 @@ export default function Dem() {
         setInitError(error);
       }
     };
-    asyncFn();
+    void asyncFn();
   }, [demFile, setDemParser, setDemTick]);
 
   if (!demParser) {
@@ -61,22 +63,16 @@ export default function Dem() {
       return (
         <div className="p-2 flex items-baseline">
           <Tooltip content="monkaW">
-            <img
-              src={`${import.meta.env.BASE_URL}/monkaW.webp`}
-              className="h-[1em] mr-[1ch]"
-            />
+            <img src={`${import.meta.env.BASE_URL}/monkaW.webp`} className="h-[1em] mr-[1ch]" />
           </Tooltip>
-          <span className="text-red-500">{`${initError}`}</span>
+          <span className="text-red-500">{errorMessage(initError)}</span>
         </div>
       );
     }
     return (
       <div className="p-2 flex items-baseline">
         <Tooltip content="borpaSpin">
-          <img
-            src={`${import.meta.env.BASE_URL}/borpaSpin.webp`}
-            className="h-[1em] mr-[1ch]"
-          />
+          <img src={`${import.meta.env.BASE_URL}/borpaSpin.webp`} className="h-[1em] mr-[1ch]" />
         </Tooltip>
         <span className="text-neutral-400">{`${doingWhat}…`}</span>
       </div>
@@ -85,9 +81,7 @@ export default function Dem() {
 
   return (
     <DemLayout>
-      {(demView === "entities" || demView === "baselineEntities") && (
-        <DemEntities />
-      )}
+      {(demView === "entities" || demView === "baselineEntities") && <DemEntities />}
       {demView === "stringTables" && <DemStringTables />}
     </DemLayout>
   );

@@ -6,8 +6,5 @@ export function useEventCallback<F extends (...args: any[]) => any>(fn: F) {
   useLayoutEffect(() => {
     ref.current = fn;
   });
-  return useCallback(
-    (...args: Parameters<F>): ReturnType<F> => ref.current.apply(null, args),
-    [],
-  );
+  return useCallback((...args: Parameters<F>): ReturnType<F> => ref.current(...args), []);
 }

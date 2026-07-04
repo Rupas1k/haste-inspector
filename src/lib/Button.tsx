@@ -16,19 +16,12 @@ type ButtonProps = {
 } & React.ButtonHTMLAttributes<HTMLButtonElement> &
   VariantProps<typeof variants>;
 
-export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  (props, ref) => {
-    const { asChild, children, className, size, ...restProps } = props;
-    const Component = asChild ? Slot : "button";
-    return (
-      <Component
-        ref={ref}
-        className={cn(variants({ size, className }))}
-        type="button"
-        {...restProps}
-      >
-        {children}
-      </Component>
-    );
-  },
-);
+export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>((props, ref) => {
+  const { asChild, children, className, size, ...restProps } = props;
+  const Component = asChild ? Slot : "button";
+  return (
+    <Component ref={ref} className={cn(variants({ size, className }))} type="button" {...restProps}>
+      {children}
+    </Component>
+  );
+});

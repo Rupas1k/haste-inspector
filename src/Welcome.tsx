@@ -1,10 +1,5 @@
 import { useAtom } from "jotai";
-import {
-  FileDigitIcon,
-  HandMetalIcon,
-  KeyboardIcon,
-  MousePointerClickIcon,
-} from "lucide-react";
+import { FileDigitIcon, HandMetalIcon, KeyboardIcon, MousePointerClickIcon } from "lucide-react";
 import React from "react";
 import { useDropzone } from "react-dropzone";
 import { demFileAtom } from "./atoms";
@@ -15,16 +10,15 @@ import { cn } from "./lib/style";
 export default function AppWelcome() {
   const [, setDemFile] = useAtom(demFileAtom);
 
-  const { open, getRootProps, getInputProps, isDragAccept, isDragReject } =
-    useDropzone({
-      multiple: false,
-      accept: {
-        "": [".dem"],
-      },
-      onDropAccepted: ([file]) => {
-        setDemFile(file);
-      },
-    });
+  const { open, getRootProps, getInputProps, isDragAccept, isDragReject } = useDropzone({
+    multiple: false,
+    accept: {
+      "": [".dem"],
+    },
+    onDropAccepted: ([file]) => {
+      setDemFile(file);
+    },
+  });
 
   React.useEffect(() => {
     const handleKeydown = (ev: KeyboardEvent) => {
@@ -51,15 +45,13 @@ export default function AppWelcome() {
     >
       <input {...getInputProps()} />
       <p>
-        <HandMetalIcon className="inline size-[1em]" /> drag and drop your
-        replay (.dem) <FileDigitIcon className="inline size-[1em]" /> file here
+        <HandMetalIcon className="inline size-[1em]" /> drag and drop your replay (.dem){" "}
+        <FileDigitIcon className="inline size-[1em]" /> file here
       </p>
       <p className="text-neutral-400">
         <small>
-          press <KeyboardIcon className="inline size-[1em]" />{" "}
-          {isMac() ? "cmd" : "ctrl"} + o or{" "}
-          <MousePointerClickIcon className="inline size-[1em]" /> click to
-          browse
+          press <KeyboardIcon className="inline size-[1em]" /> {isMac() ? "cmd" : "ctrl"} + o or{" "}
+          <MousePointerClickIcon className="inline size-[1em]" /> click to browse
         </small>
       </p>
     </main>

@@ -3,8 +3,7 @@
 
 export const isDom = () => typeof document !== "undefined";
 
-export const getPlatform = () =>
-  (navigator as any).userAgentData?.platform ?? navigator.platform;
+export const getPlatform = () => (navigator as any).userAgentData?.platform ?? navigator.platform;
 
 const pt = (v: RegExp) => v.test(getPlatform());
 
