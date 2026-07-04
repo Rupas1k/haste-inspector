@@ -14,18 +14,16 @@ import { darkModeAtom, demFileAtom, demViewAtom, fullWidthAtom } from "./atoms";
 import { Button } from "./lib/Button";
 import * as DropdownMenu from "./lib/DropdownMenu";
 import { Tooltip } from "./lib/Tooltip";
+import { assetPath } from "./lib/assetPath";
 import { cn } from "./lib/style";
 
 function IconSection() {
   return (
     <div className="flex items-center">
       <div className="flex items-center justify-center size-8 -ml-1 group relative">
+        <img src={assetPath("haste.png")} className="size-4 absolute group-hover:invisible" />
         <img
-          src={`${import.meta.env.BASE_URL}/haste.png`}
-          className="size-4 absolute group-hover:invisible"
-        />
-        <img
-          src={`${import.meta.env.BASE_URL}/peepoRun.webp`}
+          src={assetPath("peepoRun.webp")}
           className="size-4 absolute invisible group-hover:visible"
         />
       </div>
@@ -142,10 +140,7 @@ function UiSection() {
           ) : (
             <div className="flex items-baseline">
               wide mode
-              <img
-                src={`${import.meta.env.BASE_URL}/widepeepoHappy.webp`}
-                className="h-[1em] ml-[1ch]"
-              />
+              <img src={assetPath("widepeepoHappy.webp")} className="h-[1em] ml-[1ch]" />
             </div>
           )
         }

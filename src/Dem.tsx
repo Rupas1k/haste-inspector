@@ -6,6 +6,7 @@ import DemLayout from "./DemLayout";
 import DemStringTables from "./DemStringTables";
 import { demFileAtom, demParserAtom, demTickAtom, demViewAtom } from "./atoms";
 import { Tooltip } from "./lib/Tooltip";
+import { assetPath } from "./lib/assetPath";
 
 const errorMessage = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
@@ -63,7 +64,7 @@ export default function Dem() {
       return (
         <div className="p-2 flex items-baseline">
           <Tooltip content="monkaW">
-            <img src={`${import.meta.env.BASE_URL}/monkaW.webp`} className="h-[1em] mr-[1ch]" />
+            <img src={assetPath("monkaW.webp")} className="h-[1em] mr-[1ch]" />
           </Tooltip>
           <span className="text-red-500">{errorMessage(initError)}</span>
         </div>
@@ -72,7 +73,7 @@ export default function Dem() {
     return (
       <div className="p-2 flex items-baseline">
         <Tooltip content="borpaSpin">
-          <img src={`${import.meta.env.BASE_URL}/borpaSpin.webp`} className="h-[1em] mr-[1ch]" />
+          <img src={assetPath("borpaSpin.webp")} className="h-[1em] mr-[1ch]" />
         </Tooltip>
         <span className="text-neutral-400">{`${doingWhat}…`}</span>
       </div>
