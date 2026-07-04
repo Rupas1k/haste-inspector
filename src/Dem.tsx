@@ -9,6 +9,7 @@ import { Tooltip } from "./lib/Tooltip";
 import { assetPath } from "./lib/assetPath";
 
 const errorMessage = (error: unknown) => (error instanceof Error ? error.message : String(error));
+const FIRST_TICK = 0;
 
 function readFileToBytes(file: File) {
   return new Promise<Uint8Array>((resolve, reject) => {
@@ -47,8 +48,8 @@ export default function Dem() {
         setDoingWhat("constructing parser");
         const parser = new WrappedParser(fileBytes);
 
-        setDoingWhat("seeking to last tick");
-        parser.runToTick(parser.totalTicks());
+        setDoingWhat("seeking to first tick");
+        parser.runToTick(FIRST_TICK);
 
         setDemParser(parser);
         setDemTick(parser.tick());
