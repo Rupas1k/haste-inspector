@@ -1,11 +1,10 @@
 use std::fmt::Display;
 use std::io::Cursor;
 
-use source2_demo::{
-    Context, DemoRunner, Entity, EntityField, FieldValue, Interests, Observer, ObserverResult,
-    Parser,
-};
-use wasm_bindgen::{prelude::wasm_bindgen, JsError};
+use source2_demo::prelude::*;
+
+use wasm_bindgen::prelude::*;
+use wasm_bindgen::JsError;
 
 #[wasm_bindgen]
 pub struct WrappedParser {
@@ -45,15 +44,10 @@ pub struct StringTableItemLi {
 #[derive(Default)]
 struct InspectorState;
 
-impl Observer for InspectorState {
-    fn interests(&self) -> Interests {
-        Interests::ENTITY_STATE | Interests::STRING_TABLE_STATE | Interests::STRING_TABLE_ENTRIES
-    }
-
-    fn on_tick_start(&mut self, _ctx: &Context) -> ObserverResult {
-        Ok(())
-    }
-}
+#[observer]
+#[uses_entities]
+#[uses_string_tables]
+impl InspectorState {}
 
 #[wasm_bindgen]
 impl WrappedParser {
