@@ -43,8 +43,42 @@ function StringTableList() {
     [setDemSelectedStringTableName],
   );
 
+  const handleKeyDown = useCallback(
+    (ev: React.KeyboardEvent<HTMLDivElement>) => {
+      if (ev.key !== "ArrowDown" && ev.key !== "ArrowUp") {
+        return;
+      }
+
+      ev.preventDefault();
+
+      if (!stringTableList?.length) {
+        return;
+      }
+
+      const selectedIndex = stringTableList.findIndex(
+        (stringTable) => stringTable.name === demSelectedStringTableName,
+      );
+      const fallbackIndex = ev.key === "ArrowDown" ? 0 : stringTableList.length - 1;
+      const nextIndex =
+        selectedIndex === -1
+          ? fallbackIndex
+          : Math.min(
+              Math.max(selectedIndex + (ev.key === "ArrowDown" ? 1 : -1), 0),
+              stringTableList.length - 1,
+            );
+
+      setDemSelectedStringTableName(stringTableList[nextIndex].name);
+      virtualizer.scrollToIndex(nextIndex, { align: "auto" });
+    },
+    [demSelectedStringTableName, setDemSelectedStringTableName, stringTableList, virtualizer],
+  );
+
   return (
-    <div className="w-full h-full flex flex-col">
+    <div
+      className="w-full h-full flex flex-col outline-none"
+      tabIndex={0}
+      onKeyDown={handleKeyDown}
+    >
       {!stringTableList?.length && (
         <p className="m-2 text-fg-subtle">no string tables, try moving the slider</p>
       )}

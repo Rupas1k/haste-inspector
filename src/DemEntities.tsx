@@ -179,10 +179,44 @@ function EntityList() {
     [setDemSelectedEntityIndex],
   );
 
+  const handleKeyDown = useCallback(
+    (ev: React.KeyboardEvent<HTMLDivElement>) => {
+      if (ev.key !== "ArrowDown" && ev.key !== "ArrowUp") {
+        return;
+      }
+
+      ev.preventDefault();
+
+      if (!filteredEntityList?.length) {
+        return;
+      }
+
+      const selectedIndex = filteredEntityList.findIndex(
+        (entity) => entity.index === demSelectedEntityIndex,
+      );
+      const fallbackIndex = ev.key === "ArrowDown" ? 0 : filteredEntityList.length - 1;
+      const nextIndex =
+        selectedIndex === -1
+          ? fallbackIndex
+          : Math.min(
+              Math.max(selectedIndex + (ev.key === "ArrowDown" ? 1 : -1), 0),
+              filteredEntityList.length - 1,
+            );
+
+      setDemSelectedEntityIndex(filteredEntityList[nextIndex].index);
+      virtualizer.scrollToIndex(nextIndex, { align: "auto" });
+    },
+    [demSelectedEntityIndex, filteredEntityList, setDemSelectedEntityIndex, virtualizer],
+  );
+
   const [showEntityIndex, setShowEntityIndex] = useState(DEFAULT_SHOW_ENTITY_INDEX);
 
   return (
-    <div className="w-full h-full flex flex-col">
+    <div
+      className="w-full h-full flex flex-col outline-none"
+      tabIndex={0}
+      onKeyDown={handleKeyDown}
+    >
       <DemFilterBar
         entries={entityList}
         onUpdate={handleFilterUpdate}
