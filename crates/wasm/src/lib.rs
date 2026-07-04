@@ -82,7 +82,10 @@ impl WrappedParser {
         }
 
         let target_tick = tick as u32;
-        if self.parser.context().tick() == u32::MAX || target_tick >= self.parser.context().tick() {
+        let current_tick = self.parser.context().tick();
+        if target_tick == current_tick {
+            Ok(())
+        } else if current_tick == u32::MAX || target_tick > current_tick {
             self.parser.run_to_tick(target_tick).map_err(to_js_error)
         } else {
             self.parser.jump_to_tick(target_tick).map_err(to_js_error)
