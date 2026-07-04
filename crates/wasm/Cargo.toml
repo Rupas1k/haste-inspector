@@ -1,5 +1,5 @@
 [package]
-name = "haste-wasm"
+name = "haste-inspector-wasm"
 version = "0.0.0"
 edition = "2021"
 

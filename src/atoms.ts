@@ -1,4 +1,4 @@
-import type { WrappedParser } from "haste-wasm";
+import type { WrappedParser } from "./wasm-pkg/haste_inspector_wasm";
 import { atom } from "jotai";
 import { atomWithStorage } from "jotai/utils";
 

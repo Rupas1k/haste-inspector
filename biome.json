@@ -26,8 +26,7 @@
     "ignore": [
       "./node_modules",
       "./target",
-      "./apps/haste-inspector/dist",
-      "./pkgs/haste-wasm"
+      "./dist"
     ]
   }
 }

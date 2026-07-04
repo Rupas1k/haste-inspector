@@ -1,4 +1,4 @@
-import initHaste, { WrappedParser } from "haste-wasm";
+import initHaste, { WrappedParser } from "./wasm-pkg/haste_inspector_wasm";
 import { useAtom } from "jotai";
 import { useEffect, useState } from "react";
 import DemEntities from "./DemEntities";

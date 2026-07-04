@@ -1,10 +1,10 @@
 import { useVirtualizer } from "@tanstack/react-virtual";
 import {
+  eHandleToIndex,
   isEHandleValid,
   type EntityFieldLi,
   type EntityLi,
-  eHandleToIndex,
-} from "haste-wasm";
+} from "./wasm-pkg/haste_inspector_wasm";
 import { useAtom } from "jotai";
 import { CogIcon, Link2Icon, Link2OffIcon } from "lucide-react";
 import { useCallback, useMemo, useRef, useState, useTransition } from "react";

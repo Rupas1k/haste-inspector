@@ -1,17 +1,44 @@
 {
-  "name": ".",
+  "name": "haste-inspector",
   "private": true,
-  "workspaces": ["./apps/haste-inspector", "./pkgs/haste-wasm"],
+  "version": "0.0.0",
+  "type": "module",
   "scripts": {
-    "lint": "bunx @biomejs/biome lint . --write",
-    "format": "bunx @biomejs/biome format . --write && bunx @biomejs/biome check --write .",
-    "haste-wasm:build": "wasm-pack build --target web --out-dir ../../pkgs/haste-wasm --out-name haste-wasm ./crates/haste-wasm -- --verbose && rm ./pkgs/haste-wasm/.gitignore",
-    "haste-wasm:build-protobuf-src": "wasm-pack build --target web --out-dir ../../pkgs/haste-wasm --out-name haste-wasm ./crates/haste-wasm -- --verbose --features protobuf-src && rm ./pkgs/haste-wasm/.gitignore",
-    "haste-inspector:dev": "bun --filter=haste-inspector run dev",
-    "haste-inspector:build": "bun --filter=haste-inspector run build",
-    "haste-inspector:check": "bun --filter=haste-inspector run check"
+    "dev": "vite --host 0.0.0.0",
+    "build": "npm run build:wasm && tsc && vite build",
+    "build:pages": "npm run build:wasm && tsc && vite build --mode pages",
+    "build:wasm": "wasm-pack build crates/wasm --target web --out-dir ../../src/wasm-pkg --out-name haste_inspector_wasm --release",
+    "check": "npm run build:wasm && tsc --noEmit",
+    "lint": "biome lint .",
+    "format": "biome format . --write && biome check . --write"
+  },
+  "dependencies": {
+    "@fontsource/jetbrains-mono": "^5.0.18",
+    "@radix-ui/react-dropdown-menu": "^2.0.6",
+    "@radix-ui/react-scroll-area": "^1.0.5",
+    "@radix-ui/react-slider": "^1.1.2",
+    "@radix-ui/react-slot": "^1.0.2",
+    "@radix-ui/react-tooltip": "^1.0.7",
+    "@tanstack/react-virtual": "^3.0.2",
+    "class-variance-authority": "^0.7.0",
+    "clsx": "^2.1.0",
+    "jotai": "^2.6.3",
+    "lucide-react": "^0.319.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-dropzone": "^14.2.3",
+    "react-resizable-panels": "^2.1.3",
+    "tailwind-merge": "^2.2.1"
   },
   "devDependencies": {
-    "@biomejs/biome": "1.9.2"
+    "@biomejs/biome": "1.9.2",
+    "@types/react": "^18.2.43",
+    "@types/react-dom": "^18.2.17",
+    "@vitejs/plugin-react-swc": "^3.7.0",
+    "autoprefixer": "^10.4.17",
+    "postcss": "^8.4.33",
+    "tailwindcss": "^3.4.1",
+    "typescript": "^5.2.2",
+    "vite": "^5.4.6"
   }
 }
