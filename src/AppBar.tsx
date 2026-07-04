@@ -1,6 +1,7 @@
 import { useAtom } from "jotai";
 import {
   ChevronDownIcon,
+  GitForkIcon,
   GithubIcon,
   Maximize2Icon,
   Minimize2Icon,
@@ -124,6 +125,17 @@ function UiSection() {
             rel="noopener noreferrer"
           >
             <GithubIcon className="size-4" />
+          </a>
+        </Button>
+      </Tooltip>
+      <Tooltip content="fork on GitHub">
+        <Button size="small" asChild>
+          <a
+            href="https://github.com/Rupas1k/haste-inspector"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <GitForkIcon className="size-4" />
           </a>
         </Button>
       </Tooltip>
