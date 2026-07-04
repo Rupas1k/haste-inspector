@@ -26,7 +26,8 @@
     "ignore": [
       "./node_modules",
       "./target",
-      "./dist"
+      "./dist",
+      "./src/wasm-pkg"
     ]
   }
 }
