@@ -1,0 +1,70 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Checkout source2-demo
+        run: git clone --depth 1 --branch source2-demo-inspector-api https://github.com/Rupas1k/source2-demo.git ../source2-demo
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - name: Add Cargo bin to PATH
+        run: echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+
+      - name: Cache Cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: cargo-ci-${{ runner.os }}-${{ hashFiles('Cargo.lock') }}
+
+      - name: Install wasm-pack
+        env:
+          WASM_PACK_VERSION: 0.15.0
+        run: |
+          if [ ! -x "$HOME/.cargo/bin/wasm-pack" ]; then
+            curl -sSfL "https://github.com/wasm-bindgen/wasm-pack/releases/download/v${WASM_PACK_VERSION}/wasm-pack-v${WASM_PACK_VERSION}-x86_64-unknown-linux-musl.tar.gz" -o /tmp/wasm-pack.tar.gz
+            tar -xzf /tmp/wasm-pack.tar.gz -C /tmp
+            mkdir -p "$HOME/.cargo/bin"
+            cp "/tmp/wasm-pack-v${WASM_PACK_VERSION}-x86_64-unknown-linux-musl/wasm-pack" "$HOME/.cargo/bin/wasm-pack"
+            chmod +x "$HOME/.cargo/bin/wasm-pack"
+          fi
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Generate WASM bindings
+        run: npm run build:wasm
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test Rust
+        run: cargo test
+
+      - name: Build frontend
+        run: npm run build
