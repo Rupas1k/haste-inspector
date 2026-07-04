@@ -35,18 +35,6 @@ function addHeapObject(obj) {
 
 function getObject(idx) { return heap[idx]; }
 
-function dropObject(idx) {
-    if (idx < 132) return;
-    heap[idx] = heap_next;
-    heap_next = idx;
-}
-
-function takeObject(idx) {
-    const ret = getObject(idx);
-    dropObject(idx);
-    return ret;
-}
-
 let WASM_VECTOR_LEN = 0;
 
 const cachedTextEncoder = (typeof TextEncoder !== 'undefined' ? new TextEncoder('utf-8') : { encode: () => { throw Error('TextEncoder not available') } } );
@@ -116,9 +104,16 @@ function getDataViewMemory0() {
     return cachedDataViewMemory0;
 }
 
-function getArrayU8FromWasm0(ptr, len) {
-    ptr = ptr >>> 0;
-    return getUint8ArrayMemory0().subarray(ptr / 1, ptr / 1 + len);
+function dropObject(idx) {
+    if (idx < 132) return;
+    heap[idx] = heap_next;
+    heap_next = idx;
+}
+
+function takeObject(idx) {
+    const ret = getObject(idx);
+    dropObject(idx);
+    return ret;
 }
 
 function passArray8ToWasm0(arg, malloc) {
@@ -137,6 +132,19 @@ function getArrayJsValueFromWasm0(ptr, len) {
     }
     return result;
 }
+/**
+* @param {number} handle
+* @returns {number}
+*/
+export function eHandleToIndex(handle) {
+    const ret = wasm.eHandleToIndex(handle);
+    return ret;
+}
+
+function getArrayU8FromWasm0(ptr, len) {
+    ptr = ptr >>> 0;
+    return getUint8ArrayMemory0().subarray(ptr / 1, ptr / 1 + len);
+}
 
 function passArrayJsValueToWasm0(array, malloc) {
     const ptr = malloc(array.length * 4, 4) >>> 0;
@@ -154,15 +162,6 @@ function passArrayJsValueToWasm0(array, malloc) {
 export function isEHandleValid(handle) {
     const ret = wasm.isEHandleValid(handle);
     return ret !== 0;
-}
-
-/**
-* @param {number} handle
-* @returns {number}
-*/
-export function eHandleToIndex(handle) {
-    const ret = wasm.eHandleToIndex(handle);
-    return ret;
 }
 
 const EntityFieldLiFinalization = (typeof FinalizationRegistry === 'undefined')
@@ -506,7 +505,7 @@ export class StringTableLi {
         let deferred1_1;
         try {
             const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-            wasm.__wbg_get_stringtableli_name(retptr, this.__wbg_ptr);
+            wasm.__wbg_get_entityli_name(retptr, this.__wbg_ptr);
             var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
             var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
             deferred1_0 = r0;
@@ -568,31 +567,6 @@ export class WrappedParser {
         }
     }
     /**
-    * @returns {number}
-    */
-    tick() {
-        const ret = wasm.wrappedparser_tick(this.__wbg_ptr);
-        return ret;
-    }
-    /**
-    * @returns {number}
-    */
-    totalTicks() {
-        try {
-            const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-            wasm.wrappedparser_totalTicks(retptr, this.__wbg_ptr);
-            var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
-            var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
-            var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
-            if (r2) {
-                throw takeObject(r1);
-            }
-            return r0;
-        } finally {
-            wasm.__wbindgen_add_to_stack_pointer(16);
-        }
-    }
-    /**
     * @param {number} tick
     */
     runToTick(tick) {
@@ -609,7 +583,14 @@ export class WrappedParser {
         }
     }
     /**
-    * @returns {(EntityLi)[] | undefined}
+    * @returns {number}
+    */
+    totalTicks() {
+        const ret = wasm.wrappedparser_totalTicks(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+    * @returns {(EntityLi)[]}
     */
     listEntities() {
         try {
@@ -617,30 +598,8 @@ export class WrappedParser {
             wasm.wrappedparser_listEntities(retptr, this.__wbg_ptr);
             var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
             var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
-            let v1;
-            if (r0 !== 0) {
-                v1 = getArrayJsValueFromWasm0(r0, r1).slice();
-                wasm.__wbindgen_free(r0, r1 * 4, 4);
-            }
-            return v1;
-        } finally {
-            wasm.__wbindgen_add_to_stack_pointer(16);
-        }
-    }
-    /**
-    * @returns {(EntityLi)[] | undefined}
-    */
-    listBaselineEntities() {
-        try {
-            const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-            wasm.wrappedparser_listBaselineEntities(retptr, this.__wbg_ptr);
-            var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
-            var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
-            let v1;
-            if (r0 !== 0) {
-                v1 = getArrayJsValueFromWasm0(r0, r1).slice();
-                wasm.__wbindgen_free(r0, r1 * 4, 4);
-            }
+            var v1 = getArrayJsValueFromWasm0(r0, r1).slice();
+            wasm.__wbindgen_free(r0, r1 * 4, 4);
             return v1;
         } finally {
             wasm.__wbindgen_add_to_stack_pointer(16);
@@ -667,27 +626,7 @@ export class WrappedParser {
         }
     }
     /**
-    * @param {number} entity_index
-    * @returns {(EntityFieldLi)[] | undefined}
-    */
-    listBaselineEntityFields(entity_index) {
-        try {
-            const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-            wasm.wrappedparser_listBaselineEntityFields(retptr, this.__wbg_ptr, entity_index);
-            var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
-            var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
-            let v1;
-            if (r0 !== 0) {
-                v1 = getArrayJsValueFromWasm0(r0, r1).slice();
-                wasm.__wbindgen_free(r0, r1 * 4, 4);
-            }
-            return v1;
-        } finally {
-            wasm.__wbindgen_add_to_stack_pointer(16);
-        }
-    }
-    /**
-    * @returns {(StringTableLi)[] | undefined}
+    * @returns {(StringTableLi)[]}
     */
     listStringTables() {
         try {
@@ -695,11 +634,24 @@ export class WrappedParser {
             wasm.wrappedparser_listStringTables(retptr, this.__wbg_ptr);
             var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
             var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
-            let v1;
-            if (r0 !== 0) {
-                v1 = getArrayJsValueFromWasm0(r0, r1).slice();
-                wasm.__wbindgen_free(r0, r1 * 4, 4);
-            }
+            var v1 = getArrayJsValueFromWasm0(r0, r1).slice();
+            wasm.__wbindgen_free(r0, r1 * 4, 4);
+            return v1;
+        } finally {
+            wasm.__wbindgen_add_to_stack_pointer(16);
+        }
+    }
+    /**
+    * @returns {(EntityLi)[]}
+    */
+    listBaselineEntities() {
+        try {
+            const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+            wasm.wrappedparser_listBaselineEntities(retptr, this.__wbg_ptr);
+            var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+            var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
+            var v1 = getArrayJsValueFromWasm0(r0, r1).slice();
+            wasm.__wbindgen_free(r0, r1 * 4, 4);
             return v1;
         } finally {
             wasm.__wbindgen_add_to_stack_pointer(16);
@@ -726,6 +678,33 @@ export class WrappedParser {
         } finally {
             wasm.__wbindgen_add_to_stack_pointer(16);
         }
+    }
+    /**
+    * @param {number} entity_index
+    * @returns {(EntityFieldLi)[] | undefined}
+    */
+    listBaselineEntityFields(entity_index) {
+        try {
+            const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+            wasm.wrappedparser_listBaselineEntityFields(retptr, this.__wbg_ptr, entity_index);
+            var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+            var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
+            let v1;
+            if (r0 !== 0) {
+                v1 = getArrayJsValueFromWasm0(r0, r1).slice();
+                wasm.__wbindgen_free(r0, r1 * 4, 4);
+            }
+            return v1;
+        } finally {
+            wasm.__wbindgen_add_to_stack_pointer(16);
+        }
+    }
+    /**
+    * @returns {number}
+    */
+    tick() {
+        const ret = wasm.wrappedparser_tick(this.__wbg_ptr);
+        return ret;
     }
 }
 
@@ -771,10 +750,6 @@ function __wbg_get_imports() {
         const ret = StringTableItemLi.__wrap(arg0);
         return addHeapObject(ret);
     };
-    imports.wbg.__wbg_stringtableli_new = function(arg0) {
-        const ret = StringTableLi.__wrap(arg0);
-        return addHeapObject(ret);
-    };
     imports.wbg.__wbg_entityli_new = function(arg0) {
         const ret = EntityLi.__wrap(arg0);
         return addHeapObject(ret);
@@ -783,15 +758,9 @@ function __wbg_get_imports() {
         const ret = EntityFieldLi.__wrap(arg0);
         return addHeapObject(ret);
     };
-    imports.wbg.__wbindgen_string_new = function(arg0, arg1) {
-        const ret = getStringFromWasm0(arg0, arg1);
+    imports.wbg.__wbg_stringtableli_new = function(arg0) {
+        const ret = StringTableLi.__wrap(arg0);
         return addHeapObject(ret);
-    };
-    imports.wbg.__wbindgen_object_drop_ref = function(arg0) {
-        takeObject(arg0);
-    };
-    imports.wbg.__wbindgen_throw = function(arg0, arg1) {
-        throw new Error(getStringFromWasm0(arg0, arg1));
     };
     imports.wbg.__wbindgen_string_get = function(arg0, arg1) {
         const obj = getObject(arg1);
@@ -800,6 +769,16 @@ function __wbg_get_imports() {
         var len1 = WASM_VECTOR_LEN;
         getDataViewMemory0().setInt32(arg0 + 4 * 1, len1, true);
         getDataViewMemory0().setInt32(arg0 + 4 * 0, ptr1, true);
+    };
+    imports.wbg.__wbindgen_object_drop_ref = function(arg0) {
+        takeObject(arg0);
+    };
+    imports.wbg.__wbindgen_string_new = function(arg0, arg1) {
+        const ret = getStringFromWasm0(arg0, arg1);
+        return addHeapObject(ret);
+    };
+    imports.wbg.__wbindgen_throw = function(arg0, arg1) {
+        throw new Error(getStringFromWasm0(arg0, arg1));
     };
 
     return imports;

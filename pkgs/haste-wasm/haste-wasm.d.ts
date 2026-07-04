@@ -2,14 +2,14 @@
 /* eslint-disable */
 /**
 * @param {number} handle
-* @returns {boolean}
-*/
-export function isEHandleValid(handle: number): boolean;
-/**
-* @param {number} handle
 * @returns {number}
 */
 export function eHandleToIndex(handle: number): number;
+/**
+* @param {number} handle
+* @returns {boolean}
+*/
+export function isEHandleValid(handle: number): boolean;
 /**
 */
 export class EntityFieldLi {
@@ -69,87 +69,87 @@ export class WrappedParser {
 */
   constructor(bytes: Uint8Array);
 /**
-* @returns {number}
+* @param {number} tick
 */
-  tick(): number;
+  runToTick(tick: number): void;
 /**
 * @returns {number}
 */
   totalTicks(): number;
 /**
-* @param {number} tick
+* @returns {(EntityLi)[]}
 */
-  runToTick(tick: number): void;
-/**
-* @returns {(EntityLi)[] | undefined}
-*/
-  listEntities(): (EntityLi)[] | undefined;
-/**
-* @returns {(EntityLi)[] | undefined}
-*/
-  listBaselineEntities(): (EntityLi)[] | undefined;
+  listEntities(): (EntityLi)[];
 /**
 * @param {number} entity_index
 * @returns {(EntityFieldLi)[] | undefined}
 */
   listEntityFields(entity_index: number): (EntityFieldLi)[] | undefined;
 /**
-* @param {number} entity_index
-* @returns {(EntityFieldLi)[] | undefined}
+* @returns {(StringTableLi)[]}
 */
-  listBaselineEntityFields(entity_index: number): (EntityFieldLi)[] | undefined;
+  listStringTables(): (StringTableLi)[];
 /**
-* @returns {(StringTableLi)[] | undefined}
+* @returns {(EntityLi)[]}
 */
-  listStringTables(): (StringTableLi)[] | undefined;
+  listBaselineEntities(): (EntityLi)[];
 /**
 * @param {string} string_table_name
 * @returns {(StringTableItemLi)[] | undefined}
 */
   listStringTableItems(string_table_name: string): (StringTableItemLi)[] | undefined;
+/**
+* @param {number} entity_index
+* @returns {(EntityFieldLi)[] | undefined}
+*/
+  listBaselineEntityFields(entity_index: number): (EntityFieldLi)[] | undefined;
+/**
+* @returns {number}
+*/
+  tick(): number;
 }
 
 export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembly.Module;
 
 export interface InitOutput {
   readonly memory: WebAssembly.Memory;
-  readonly __wbg_wrappedparser_free: (a: number, b: number) => void;
-  readonly __wbg_entityli_free: (a: number, b: number) => void;
-  readonly __wbg_get_entityli_index: (a: number) => number;
-  readonly __wbg_set_entityli_index: (a: number, b: number) => void;
-  readonly __wbg_get_entityli_name: (a: number, b: number) => void;
   readonly __wbg_entityfieldli_free: (a: number, b: number) => void;
-  readonly __wbg_get_entityfieldli_path: (a: number, b: number) => void;
-  readonly __wbg_set_entityfieldli_path: (a: number, b: number, c: number) => void;
-  readonly __wbg_get_entityfieldli_namedPath: (a: number, b: number) => void;
-  readonly __wbg_set_entityfieldli_namedPath: (a: number, b: number, c: number) => void;
-  readonly __wbg_get_entityfieldli_value: (a: number, b: number) => void;
-  readonly __wbg_set_entityfieldli_value: (a: number, b: number, c: number) => void;
-  readonly __wbg_get_entityfieldli_encodedAs: (a: number, b: number) => void;
-  readonly __wbg_set_entityfieldli_encodedAs: (a: number, b: number, c: number) => void;
+  readonly __wbg_entityli_free: (a: number, b: number) => void;
   readonly __wbg_get_entityfieldli_decodedAs: (a: number, b: number) => void;
-  readonly __wbg_set_entityfieldli_decodedAs: (a: number, b: number, c: number) => void;
-  readonly __wbg_stringtableli_free: (a: number, b: number) => void;
-  readonly __wbg_get_stringtableli_name: (a: number, b: number) => void;
-  readonly __wbg_stringtableitemli_free: (a: number, b: number) => void;
+  readonly __wbg_get_entityfieldli_encodedAs: (a: number, b: number) => void;
+  readonly __wbg_get_entityfieldli_namedPath: (a: number, b: number) => void;
+  readonly __wbg_get_entityfieldli_path: (a: number, b: number) => void;
+  readonly __wbg_get_entityfieldli_value: (a: number, b: number) => void;
+  readonly __wbg_get_entityli_index: (a: number) => number;
+  readonly __wbg_get_entityli_name: (a: number, b: number) => void;
   readonly __wbg_get_stringtableitemli_string: (a: number, b: number) => void;
-  readonly __wbg_set_stringtableitemli_string: (a: number, b: number, c: number) => void;
   readonly __wbg_get_stringtableitemli_userData: (a: number, b: number) => void;
+  readonly __wbg_set_entityfieldli_decodedAs: (a: number, b: number, c: number) => void;
+  readonly __wbg_set_entityfieldli_encodedAs: (a: number, b: number, c: number) => void;
+  readonly __wbg_set_entityfieldli_namedPath: (a: number, b: number, c: number) => void;
+  readonly __wbg_set_entityfieldli_path: (a: number, b: number, c: number) => void;
+  readonly __wbg_set_entityfieldli_value: (a: number, b: number, c: number) => void;
+  readonly __wbg_set_entityli_index: (a: number, b: number) => void;
+  readonly __wbg_set_stringtableitemli_string: (a: number, b: number, c: number) => void;
   readonly __wbg_set_stringtableitemli_userData: (a: number, b: number, c: number) => void;
-  readonly wrappedparser_fromBytes: (a: number, b: number, c: number) => void;
-  readonly wrappedparser_tick: (a: number) => number;
-  readonly wrappedparser_totalTicks: (a: number, b: number) => void;
-  readonly wrappedparser_runToTick: (a: number, b: number, c: number) => void;
-  readonly wrappedparser_listEntities: (a: number, b: number) => void;
-  readonly wrappedparser_listBaselineEntities: (a: number, b: number) => void;
-  readonly wrappedparser_listEntityFields: (a: number, b: number, c: number) => void;
-  readonly wrappedparser_listBaselineEntityFields: (a: number, b: number, c: number) => void;
-  readonly wrappedparser_listStringTables: (a: number, b: number) => void;
-  readonly wrappedparser_listStringTableItems: (a: number, b: number, c: number, d: number) => void;
-  readonly isEHandleValid: (a: number) => number;
+  readonly __wbg_stringtableitemli_free: (a: number, b: number) => void;
+  readonly __wbg_stringtableli_free: (a: number, b: number) => void;
+  readonly __wbg_wrappedparser_free: (a: number, b: number) => void;
   readonly eHandleToIndex: (a: number) => number;
+  readonly isEHandleValid: (a: number) => number;
+  readonly wrappedparser_fromBytes: (a: number, b: number, c: number) => void;
+  readonly wrappedparser_listBaselineEntities: (a: number, b: number) => void;
+  readonly wrappedparser_listBaselineEntityFields: (a: number, b: number, c: number) => void;
+  readonly wrappedparser_listEntities: (a: number, b: number) => void;
+  readonly wrappedparser_listEntityFields: (a: number, b: number, c: number) => void;
+  readonly wrappedparser_listStringTableItems: (a: number, b: number, c: number, d: number) => void;
+  readonly wrappedparser_listStringTables: (a: number, b: number) => void;
+  readonly wrappedparser_runToTick: (a: number, b: number, c: number) => void;
+  readonly wrappedparser_tick: (a: number) => number;
+  readonly wrappedparser_totalTicks: (a: number) => number;
   readonly __wbg_set_entityli_name: (a: number, b: number, c: number) => void;
   readonly __wbg_set_stringtableli_name: (a: number, b: number, c: number) => void;
+  readonly __wbg_get_stringtableli_name: (a: number, b: number) => void;
   readonly __wbindgen_malloc: (a: number, b: number) => number;
   readonly __wbindgen_realloc: (a: number, b: number, c: number, d: number) => number;
   readonly __wbindgen_add_to_stack_pointer: (a: number) => number;
