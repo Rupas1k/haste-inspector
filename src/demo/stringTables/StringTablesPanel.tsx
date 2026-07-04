@@ -2,11 +2,11 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 import { useAtom } from "jotai";
 import { useCallback, useMemo, useRef } from "react";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
-import { demParserAtom, demSelectedStringTableNameAtom, demTickAtom } from "./atoms";
-import { ScrollArea } from "./lib/ScrollArea";
-import { cn } from "./lib/style";
+import { demParserAtom, demSelectedStringTableNameAtom, demTickAtom } from "../demoState";
+import { ScrollArea } from "../../shared/components/ScrollArea";
+import { cn } from "../../shared/utils/style";
 
-// TODO: deduplicate (same const exists in DemEntities.tsx)
+// TODO: deduplicate (same const exists in EntitiesPanel.tsx)
 const LI_HEIGHT = 26;
 
 function byteToHex(byte: number): string {
@@ -192,7 +192,7 @@ function StringTableItemList() {
   );
 }
 
-export default function DemStringTables() {
+export default function StringTablesPanel() {
   return (
     <div className="grow h-0">
       <PanelGroup direction="horizontal">

@@ -1,12 +1,12 @@
 import { useAtom } from "jotai";
 import type React from "react";
 import { useCallback, useEffect, useState, useTransition } from "react";
-import { demParserAtom, demTickAtom } from "./atoms";
-import { Slider } from "./lib/Slider";
-import { Tooltip } from "./lib/Tooltip";
-import { formatNumber } from "./lib/formatNumber";
+import { demParserAtom, demTickAtom } from "./demoState";
+import { Slider } from "../shared/components/Slider";
+import { Tooltip } from "../shared/components/Tooltip";
+import { formatNumber } from "../shared/utils/formatNumber";
 
-export default function DemControlBar() {
+export default function DemoTimeline() {
   const [demParser] = useAtom(demParserAtom);
   const [demTick, setDemTick] = useAtom(demTickAtom);
 

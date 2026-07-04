@@ -1,7 +1,7 @@
 import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu";
 import { CheckIcon } from "lucide-react";
 import React from "react";
-import { cn } from "./style";
+import { cn } from "../utils/style";
 
 export * from "@radix-ui/react-dropdown-menu";
 

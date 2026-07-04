@@ -1,4 +1,3 @@
-import type { WrappedParser } from "./wasm-pkg/haste_inspector_wasm";
 import { atom } from "jotai";
 import { atomWithStorage } from "jotai/utils";
 
@@ -17,10 +16,3 @@ function atomWithToggleAndStorage(key: string, initialValue?: boolean, storage?:
 
 export const darkModeAtom = atomWithToggleAndStorage("darkMode", true);
 export const fullWidthAtom = atomWithToggleAndStorage("fullWidth", false);
-
-export const demFileAtom = atom<File | undefined>(undefined);
-export const demParserAtom = atom<WrappedParser | undefined>(undefined);
-export const demTickAtom = atom(0);
-export const demSelectedEntityIndexAtom = atom<number | undefined>(undefined);
-export const demViewAtom = atom<"entities" | "baselineEntities" | "stringTables">("entities");
-export const demSelectedStringTableNameAtom = atom<string | undefined>(undefined);

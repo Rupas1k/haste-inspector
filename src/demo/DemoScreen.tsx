@@ -1,12 +1,12 @@
-import initHaste, { WrappedParser } from "./wasm-pkg/haste_inspector_wasm";
+import initHaste, { WrappedParser } from "../generated/wasm/haste_inspector_wasm";
 import { useAtom } from "jotai";
 import { useEffect, useState } from "react";
-import DemEntities from "./DemEntities";
-import DemLayout from "./DemLayout";
-import DemStringTables from "./DemStringTables";
-import { demFileAtom, demParserAtom, demTickAtom, demViewAtom } from "./atoms";
-import { Tooltip } from "./lib/Tooltip";
-import { assetPath } from "./lib/assetPath";
+import EntitiesPanel from "./entities/EntitiesPanel";
+import DemoLayout from "./DemoLayout";
+import StringTablesPanel from "./stringTables/StringTablesPanel";
+import { demFileAtom, demParserAtom, demTickAtom, demViewAtom } from "./demoState";
+import { Tooltip } from "../shared/components/Tooltip";
+import { assetPath } from "../shared/utils/assetPath";
 
 const errorMessage = (error: unknown) => (error instanceof Error ? error.message : String(error));
 const FIRST_TICK = 0;
@@ -28,7 +28,7 @@ function readFileToBytes(file: File) {
   });
 }
 
-export default function Dem() {
+export default function DemoScreen() {
   const [demFile] = useAtom(demFileAtom);
   const [demParser, setDemParser] = useAtom(demParserAtom);
   const [demView] = useAtom(demViewAtom);
@@ -82,9 +82,9 @@ export default function Dem() {
   }
 
   return (
-    <DemLayout>
-      {(demView === "entities" || demView === "baselineEntities") && <DemEntities />}
-      {demView === "stringTables" && <DemStringTables />}
-    </DemLayout>
+    <DemoLayout>
+      {(demView === "entities" || demView === "baselineEntities") && <EntitiesPanel />}
+      {demView === "stringTables" && <StringTablesPanel />}
+    </DemoLayout>
   );
 }

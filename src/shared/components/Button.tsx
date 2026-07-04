@@ -1,7 +1,7 @@
 import { Slot } from "@radix-ui/react-slot";
 import { type VariantProps, cva } from "class-variance-authority";
 import React from "react";
-import { cn } from "./style";
+import { cn } from "../utils/style";
 
 const variants = cva(
   "hover:bg-neutral-500/40 rounded inline-flex items-center justify-center disabled:pointer-events-none disabled:opacity-50",

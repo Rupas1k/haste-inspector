@@ -4,18 +4,18 @@ import {
   isEHandleValid,
   type EntityFieldLi,
   type EntityLi,
-} from "./wasm-pkg/haste_inspector_wasm";
+} from "../../generated/wasm/haste_inspector_wasm";
 import { useAtom } from "jotai";
 import { ChevronDownIcon, ChevronRightIcon, CogIcon, Link2Icon, Link2OffIcon } from "lucide-react";
 import { useCallback, useMemo, useRef, useState, useTransition } from "react";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
-import DemFilterBar, { type UpdateEventHandler } from "./DemFilterBar";
-import { demParserAtom, demSelectedEntityIndexAtom, demTickAtom, demViewAtom } from "./atoms";
-import { Button } from "./lib/Button";
-import * as DropdownMenu from "./lib/DropdownMenu";
-import { ScrollArea } from "./lib/ScrollArea";
-import { Tooltip } from "./lib/Tooltip";
-import { cn } from "./lib/style";
+import FilterBar, { type UpdateEventHandler } from "../../shared/components/FilterBar";
+import { demParserAtom, demSelectedEntityIndexAtom, demTickAtom, demViewAtom } from "../demoState";
+import { Button } from "../../shared/components/Button";
+import * as DropdownMenu from "../../shared/components/DropdownMenu";
+import { ScrollArea } from "../../shared/components/ScrollArea";
+import { Tooltip } from "../../shared/components/Tooltip";
+import { cn } from "../../shared/utils/style";
 
 const LI_HEIGHT = 26;
 
@@ -217,7 +217,7 @@ function EntityList() {
       tabIndex={0}
       onKeyDown={handleKeyDown}
     >
-      <DemFilterBar
+      <FilterBar
         entries={entityList}
         onUpdate={handleFilterUpdate}
         placehoder="filter entities…"
@@ -577,7 +577,7 @@ function EntityFieldList() {
 
   return (
     <div className="w-full h-full flex flex-col">
-      <DemFilterBar
+      <FilterBar
         entries={entityFieldList}
         onUpdate={handleFilterUpdate}
         updateDelay={10}
@@ -706,7 +706,7 @@ function EntityFieldList() {
   );
 }
 
-export default function DemEntities() {
+export default function EntitiesPanel() {
   return (
     <div className="grow h-0">
       <PanelGroup direction="horizontal">

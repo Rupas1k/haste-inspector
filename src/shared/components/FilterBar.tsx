@@ -1,11 +1,11 @@
 import { CaseSensitiveIcon, RegexIcon } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Button } from "./lib/Button";
-import { Tooltip } from "./lib/Tooltip";
-import { debounce } from "./lib/debounce";
-import { cn } from "./lib/style";
-import { useElementSize } from "./lib/useElementSize";
-import { useEventCallback } from "./lib/useEventCallback";
+import { Button } from "./Button";
+import { Tooltip } from "./Tooltip";
+import { debounce } from "../utils/debounce";
+import { cn } from "../utils/style";
+import { useElementSize } from "../hooks/useElementSize";
+import { useEventCallback } from "../hooks/useEventCallback";
 
 const errorMessage = (error: unknown) => (error instanceof Error ? error.message : String(error));
 

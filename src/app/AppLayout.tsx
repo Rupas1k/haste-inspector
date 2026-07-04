@@ -1,7 +1,7 @@
 import { useAtom } from "jotai";
-import AppBar from "./AppBar";
-import { fullWidthAtom } from "./atoms";
-import { cn } from "./lib/style";
+import AppToolbar from "./AppToolbar";
+import { fullWidthAtom } from "./appState";
+import { cn } from "../shared/utils/style";
 
 type AppLayoutProps = React.PropsWithChildren;
 
@@ -17,7 +17,7 @@ export default function AppLayout(props: AppLayoutProps) {
         !fullWidth && "max-w-[80rem] border-x border-divider",
       )}
     >
-      <AppBar />
+      <AppToolbar />
       {children}
     </div>
   );

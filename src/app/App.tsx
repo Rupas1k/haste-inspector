@@ -1,9 +1,9 @@
 import * as TooltipPrimitive from "@radix-ui/react-tooltip";
 import { useAtom } from "jotai";
 import AppLayout from "./AppLayout";
-import Dem from "./Dem";
-import Welcome from "./Welcome";
-import { demFileAtom } from "./atoms";
+import DemoScreen from "../demo/DemoScreen";
+import WelcomeScreen from "./WelcomeScreen";
+import { demFileAtom } from "../demo/demoState";
 
 export default function App() {
   const [demFile] = useAtom(demFileAtom);
@@ -11,8 +11,8 @@ export default function App() {
   return (
     <TooltipPrimitive.Provider delayDuration={0} disableHoverableContent>
       <AppLayout>
-        {!demFile && <Welcome />}
-        {demFile && <Dem />}
+        {!demFile && <WelcomeScreen />}
+        {demFile && <DemoScreen />}
       </AppLayout>
     </TooltipPrimitive.Provider>
   );

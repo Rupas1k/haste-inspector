@@ -1,5 +1,5 @@
 import type React from "react";
-import DemControlBar from "./DemControlBar";
+import DemoTimeline from "./DemoTimeline";
 
 type DemLayoutProps = React.PropsWithChildren;
 
@@ -8,7 +8,7 @@ export default function DemLayout(props: DemLayoutProps) {
   return (
     <div className="grow flex flex-col divide-y divide-divider">
       {children}
-      <DemControlBar />
+      <DemoTimeline />
     </div>
   );
 }

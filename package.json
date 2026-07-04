@@ -7,7 +7,7 @@
     "dev": "vite --host 0.0.0.0",
     "build": "npm run build:wasm && tsc && vite build",
     "build:pages": "npm run build:wasm && tsc && vite build --mode pages",
-    "build:wasm": "wasm-pack build wasm --target web --out-dir ../src/wasm-pkg --out-name haste_inspector_wasm --release",
+    "build:wasm": "wasm-pack build wasm --target web --out-dir ../src/generated/wasm --out-name haste_inspector_wasm --release",
     "check": "npm run build:wasm && tsc --noEmit",
     "lint": "eslint .",
     "format": "prettier --write .",

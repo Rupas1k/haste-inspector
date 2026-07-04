@@ -2,12 +2,12 @@ import { useAtom } from "jotai";
 import { FileDigitIcon, HandMetalIcon, KeyboardIcon, MousePointerClickIcon } from "lucide-react";
 import React from "react";
 import { useDropzone } from "react-dropzone";
-import { demFileAtom } from "./atoms";
-import { isCtrlOrCmdActive } from "./lib/keyboard";
-import { isMac } from "./lib/platform";
-import { cn } from "./lib/style";
+import { demFileAtom } from "../demo/demoState";
+import { isCtrlOrCmdActive } from "../shared/utils/keyboard";
+import { isMac } from "../shared/utils/platform";
+import { cn } from "../shared/utils/style";
 
-export default function AppWelcome() {
+export default function WelcomeScreen() {
   const [, setDemFile] = useAtom(demFileAtom);
 
   const { open, getRootProps, getInputProps, isDragAccept, isDragReject } = useDropzone({

@@ -11,12 +11,13 @@ import {
   XIcon,
 } from "lucide-react";
 import { useLayoutEffect, useState } from "react";
-import { darkModeAtom, demFileAtom, demViewAtom, fullWidthAtom } from "./atoms";
-import { Button } from "./lib/Button";
-import * as DropdownMenu from "./lib/DropdownMenu";
-import { Tooltip } from "./lib/Tooltip";
-import { assetPath } from "./lib/assetPath";
-import { cn } from "./lib/style";
+import { darkModeAtom, fullWidthAtom } from "./appState";
+import { demFileAtom, demViewAtom } from "../demo/demoState";
+import { Button } from "../shared/components/Button";
+import * as DropdownMenu from "../shared/components/DropdownMenu";
+import { Tooltip } from "../shared/components/Tooltip";
+import { assetPath } from "../shared/utils/assetPath";
+import { cn } from "../shared/utils/style";
 
 function IconSection() {
   return (
@@ -169,7 +170,7 @@ function UiSection() {
   );
 }
 
-export default function AppBar() {
+export default function AppToolbar() {
   return (
     <div className="shrink-0 grid grid-cols-[auto_1fr_auto] px-1 h-8">
       <IconSection />
