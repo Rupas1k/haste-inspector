@@ -16,9 +16,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Checkout source2-demo
-        run: git clone --depth 1 --branch source2-demo-inspector-api https://github.com/Rupas1k/source2-demo.git ../source2-demo
-
       - name: Setup Node
         uses: actions/setup-node@v4
         with:

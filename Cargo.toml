@@ -8,5 +8,5 @@ members = [
 edition = "2021"
 
 [workspace.dependencies]
-source2-demo = { path = "../source2-demo/source2-demo", default-features = false, features = ["dota", "deadlock", "cs2"] }
+source2-demo = { version = "0.5", default-features = false }
 wasm-bindgen = "0.2"
