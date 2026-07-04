@@ -6,7 +6,7 @@ import {
   type EntityLi,
 } from "./wasm-pkg/haste_inspector_wasm";
 import { useAtom } from "jotai";
-import { CogIcon, Link2Icon, Link2OffIcon } from "lucide-react";
+import { ChevronDownIcon, ChevronRightIcon, CogIcon, Link2Icon, Link2OffIcon } from "lucide-react";
 import { useCallback, useMemo, useRef, useState, useTransition } from "react";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import DemFilterBar, { type UpdateEventHandler } from "./DemFilterBar";
@@ -25,10 +25,65 @@ const DEFAULT_SHOW_FIELD_ENCODED_TYPE = true;
 const DEFAULT_SHOW_FIELD_DECODED_TYPE = false;
 const DEFAULT_SHOW_FIELD_PATH = false;
 
+const ARRAY_INDEX_RE = /^\d{4}$/;
+const ARRAY_TYPE_RE = /^(.*)\[(\d+)\]$/;
+
+type WrappedEntityFieldLi = {
+  inner: Pick<EntityFieldLi, "decodedAs" | "encodedAs" | "namedPath" | "path" | "value">;
+  joinedPath: string;
+  joinedNamedPath: string;
+  depth: number;
+  isArrayParent: boolean;
+  arrayLength?: number;
+};
+
 type EntityListPreferencesProps = {
   showEntityIndex: boolean;
   setShowEntityIndex: (value: boolean) => void;
 };
+
+function formatFieldPath(path: Uint8Array) {
+  return Array.from(path)
+    .map((part) => part.toString().padStart(4, " "))
+    .join("");
+}
+
+function getArrayTypeParts(encodedAs: string) {
+  const match = encodedAs.match(ARRAY_TYPE_RE);
+  if (!match) {
+    return undefined;
+  }
+
+  return {
+    elementType: match[1],
+    length: Number(match[2]),
+  };
+}
+
+function arrayParentKey(field: EntityFieldLi) {
+  const arrayType = getArrayTypeParts(field.encodedAs);
+  const lastPart = field.namedPath[field.namedPath.length - 1];
+
+  if (!arrayType || !lastPart || !ARRAY_INDEX_RE.test(lastPart)) {
+    return undefined;
+  }
+
+  return field.namedPath.slice(0, -1).join(".");
+}
+
+function compareFieldRows(a: WrappedEntityFieldLi, b: WrappedEntityFieldLi) {
+  for (let i = 0; i < Math.min(a.inner.path.length, b.inner.path.length); i++) {
+    if (a.inner.path[i] !== b.inner.path[i]) {
+      return a.inner.path[i] - b.inner.path[i];
+    }
+  }
+
+  if (a.inner.path.length !== b.inner.path.length) {
+    return a.inner.path.length - b.inner.path.length;
+  }
+
+  return a.joinedNamedPath.localeCompare(b.joinedNamedPath);
+}
 
 // NOTE: keep this in sync with EntityFieldListPreferences
 function EntityListPreferences(props: EntityListPreferencesProps) {
@@ -239,11 +294,11 @@ function EntityFieldList() {
   const [demSelectedEntityIndex] = useAtom(demSelectedEntityIndexAtom);
   const [demTick] = useAtom(demTickAtom);
 
-  const { entityFieldList, joinedPathMaxLen } = useMemo(() => {
+  const rawEntityFieldList = useMemo(() => {
     void demTick;
 
     if (demSelectedEntityIndex === undefined) {
-      return {};
+      return undefined;
     }
 
     let tmpEntityFieldList: EntityFieldLi[] | undefined;
@@ -253,36 +308,92 @@ function EntityFieldList() {
       tmpEntityFieldList = demParser?.listBaselineEntityFields(demSelectedEntityIndex);
     }
 
-    let joinedPathMaxLen = 0;
-
-    const entityFieldList = tmpEntityFieldList?.map((entityField) => {
-      const joinedPath = Array.from(entityField.path)
-        .map((part) => part.toString().padStart(4, " "))
-        .join("");
-      joinedPathMaxLen = Math.max(joinedPathMaxLen, joinedPath.length);
-      return {
-        inner: entityField,
-        joinedPath,
-        joinedNamedPath: entityField.namedPath.join("."),
-      };
-    });
-
-    entityFieldList?.sort((a, b) => {
-      // compare path arrays element by element
-      for (let i = 0; i < Math.min(a.inner.path.length, b.inner.path.length); i++) {
-        if (a.inner.path[i] !== b.inner.path[i]) {
-          return a.inner.path[i] - b.inner.path[i];
-        }
-      }
-      // if the paths are equal up to the minimum length, the shorter path
-      // comes first
-      return a.inner.path.length - b.inner.path.length;
-    });
-
-    return { entityFieldList, joinedPathMaxLen };
+    return tmpEntityFieldList;
   }, [demParser, demView, demSelectedEntityIndex, demTick]);
 
-  type WrappedEntityFieldLi = NonNullable<typeof entityFieldList>[0];
+  const [expandedArrays, setExpandedArrays] = useState(() => new Set<string>());
+
+  const { entityFieldList, joinedPathMaxLen } = useMemo(() => {
+    let joinedPathMaxLen = 0;
+    const rows: WrappedEntityFieldLi[] = [];
+    const arrayRowsByKey = new Map<string, WrappedEntityFieldLi>();
+
+    const sortedFields = rawEntityFieldList?.slice().sort((a, b) => {
+      for (let i = 0; i < Math.min(a.path.length, b.path.length); i++) {
+        if (a.path[i] !== b.path[i]) {
+          return a.path[i] - b.path[i];
+        }
+      }
+
+      return a.path.length - b.path.length;
+    });
+
+    for (const entityField of sortedFields ?? []) {
+      const parentKey = arrayParentKey(entityField);
+      const arrayType = getArrayTypeParts(entityField.encodedAs);
+
+      if (parentKey && arrayType) {
+        let arrayRow = arrayRowsByKey.get(parentKey);
+
+        if (!arrayRow) {
+          const parentPath = entityField.path.slice(0, -1);
+          const parentNamedPath = entityField.namedPath.slice(0, -1);
+          arrayRow = {
+            inner: {
+              path: parentPath,
+              namedPath: parentNamedPath,
+              value: String(arrayType.length),
+              encodedAs: entityField.encodedAs,
+              decodedAs: "Array",
+            },
+            joinedPath: formatFieldPath(parentPath),
+            joinedNamedPath: parentKey,
+            depth: 0,
+            isArrayParent: true,
+            arrayLength: arrayType.length,
+          };
+          arrayRowsByKey.set(parentKey, arrayRow);
+          rows.push(arrayRow);
+          joinedPathMaxLen = Math.max(joinedPathMaxLen, arrayRow.joinedPath.length);
+        }
+
+        if (!expandedArrays.has(parentKey)) {
+          continue;
+        }
+
+        const childRow: WrappedEntityFieldLi = {
+          inner: {
+            path: entityField.path,
+            namedPath: entityField.namedPath,
+            value: entityField.value,
+            encodedAs: arrayType.elementType,
+            decodedAs: entityField.decodedAs,
+          },
+          joinedPath: formatFieldPath(entityField.path),
+          joinedNamedPath: entityField.namedPath.join("."),
+          depth: 1,
+          isArrayParent: false,
+        };
+        rows.push(childRow);
+        joinedPathMaxLen = Math.max(joinedPathMaxLen, childRow.joinedPath.length);
+        continue;
+      }
+
+      const row: WrappedEntityFieldLi = {
+        inner: entityField,
+        joinedPath: formatFieldPath(entityField.path),
+        joinedNamedPath: entityField.namedPath.join("."),
+        depth: 0,
+        isArrayParent: false,
+      };
+      rows.push(row);
+      joinedPathMaxLen = Math.max(joinedPathMaxLen, row.joinedPath.length);
+    }
+
+    rows.sort(compareFieldRows);
+
+    return { entityFieldList: rows, joinedPathMaxLen };
+  }, [rawEntityFieldList, expandedArrays]);
 
   const [, startTransition] = useTransition();
   const [filteredEntityFieldList, setFinalEntityFieldList] = useState(entityFieldList);
@@ -290,9 +401,11 @@ function EntityFieldList() {
     (entries, searchCmpFn) => {
       startTransition(() => {
         if (searchCmpFn) {
-          setFinalEntityFieldList(entries?.filter((entry) => searchCmpFn(entry.joinedNamedPath)));
+          setFinalEntityFieldList(
+            entries?.filter((entry) => searchCmpFn(entry.joinedNamedPath)) ?? [],
+          );
         } else {
-          setFinalEntityFieldList(entries);
+          setFinalEntityFieldList(entries ?? []);
         }
       });
     },
@@ -311,6 +424,17 @@ function EntityFieldList() {
   const [showFieldPath, setShowFieldPath] = useState(DEFAULT_SHOW_FIELD_PATH);
 
   const [, setDemSelectedEntityIndex] = useAtom(demSelectedEntityIndexAtom);
+  const handleArrayToggle = useCallback((arrayName: string) => {
+    setExpandedArrays((prevExpandedArrays) => {
+      const nextExpandedArrays = new Set(prevExpandedArrays);
+      if (nextExpandedArrays.has(arrayName)) {
+        nextExpandedArrays.delete(arrayName);
+      } else {
+        nextExpandedArrays.add(arrayName);
+      }
+      return nextExpandedArrays;
+    });
+  }, []);
   const handleClick = useCallback(
     (ev: React.MouseEvent<HTMLLIElement>) => {
       const entityIndex = +ev.currentTarget.dataset.entidx!;
@@ -358,9 +482,13 @@ function EntityFieldList() {
       <ScrollArea className="w-full grow" viewportRef={viewportRef}>
         <ul className="w-full h-full relative" style={{ height: virtualizer.getTotalSize() }}>
           {virtualizer.getVirtualItems().map((virtualItem) => {
-            const entityFieldItem = filteredEntityFieldList![virtualItem.index];
+            const entityFieldItem = filteredEntityFieldList[virtualItem.index];
+            const arrayExpanded =
+              entityFieldItem.isArrayParent && expandedArrays.has(entityFieldItem.joinedNamedPath);
 
-            const handle = entityFieldItem.inner.encodedAs.startsWith("CHandle");
+            const handle =
+              !entityFieldItem.isArrayParent &&
+              entityFieldItem.inner.encodedAs.startsWith("CHandle");
             const handleValid = handle && isEHandleValid(+entityFieldItem.inner.value);
             const linkedEntIdx = handleValid ? eHandleToIndex(+entityFieldItem.inner.value) : null;
 
@@ -379,6 +507,24 @@ function EntityFieldList() {
                 onClick={handleClick}
               >
                 <span className="whitespace-nowrap gap-x-[1ch] flex items-center">
+                  <span className="inline-flex size-4 items-center justify-center">
+                    {entityFieldItem.isArrayParent && (
+                      <button
+                        className="inline-flex size-4 items-center justify-center rounded hover:bg-neutral-500/30"
+                        type="button"
+                        onClick={(ev) => {
+                          ev.stopPropagation();
+                          handleArrayToggle(entityFieldItem.joinedNamedPath);
+                        }}
+                      >
+                        {arrayExpanded ? (
+                          <ChevronDownIcon className="size-3" />
+                        ) : (
+                          <ChevronRightIcon className="size-3" />
+                        )}
+                      </button>
+                    )}
+                  </span>
                   {showFieldPath && (
                     <span
                       className="opacity-40 whitespace-pre mr-2"
@@ -387,7 +533,9 @@ function EntityFieldList() {
                       {entityFieldItem.joinedPath}
                     </span>
                   )}
-                  <span>{entityFieldItem.joinedNamedPath}</span>
+                  <span style={{ paddingLeft: `${entityFieldItem.depth * 2}ch` }}>
+                    {entityFieldItem.joinedNamedPath}
+                  </span>
                   <span className="opacity-40 -ml-2">:</span>
                   {(showFieldEncodedType || showFieldDecodedType) && (
                     <>
@@ -402,7 +550,11 @@ function EntityFieldList() {
                       )}
                     </>
                   )}
-                  <span className="text-fg">{entityFieldItem.inner.value}</span>
+                  <span className={cn("text-fg", entityFieldItem.isArrayParent && "opacity-60")}>
+                    {entityFieldItem.isArrayParent
+                      ? `length ${entityFieldItem.arrayLength ?? entityFieldItem.inner.value}`
+                      : entityFieldItem.inner.value}
+                  </span>
                   {handle &&
                     (handleValid ? (
                       <Tooltip content="click to navigate to the linked entity">
