@@ -7,8 +7,5 @@ edition = "2021"
 source2-demo.workspace = true
 wasm-bindgen.workspace = true
 
-[features]
-protobuf-src = []
-
 [lib]
 crate-type = ["cdylib"]
