@@ -190,7 +190,7 @@ fn collect_entity_field_list(fields: Vec<EntityField<'_>>) -> Vec<EntityFieldLi>
             named_path: field.name.split('.').map(ToString::to_string).collect(),
             value: field.value.map(format_field_value).unwrap_or_default(),
             encoded_as: field.field_type,
-            decoded_as: field.decoded_type.to_string(),
+            decoded_as: field.decoded_type.unwrap_or("None").to_string(),
         })
         .collect()
 }
