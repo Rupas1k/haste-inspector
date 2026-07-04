@@ -33,7 +33,7 @@ type WrappedEntityFieldLi = {
   joinedPath: string;
   joinedNamedPath: string;
   depth: number;
-  expandableKind?: "array" | "vector";
+  expandableKind?: "array" | "vector" | "vectorItem";
   collectionLength?: number;
 };
 
@@ -41,7 +41,7 @@ type FieldGroup = {
   key: string;
   path: Uint8Array;
   namedPath: string[];
-  kind: "array" | "vector";
+  kind: "array" | "vector" | "vectorItem";
   length: number;
   encodedAs: string;
 };
@@ -80,19 +80,20 @@ function compareFieldPaths(a: Pick<EntityFieldLi, "path">, b: Pick<EntityFieldLi
 }
 
 function groupRow(group: FieldGroup, depth: number): WrappedEntityFieldLi {
+  const decodedAs = group.kind === "array" ? "Array" : group.kind === "vector" ? "Vector" : "Item";
   return {
     inner: {
       path: group.path,
       namedPath: group.namedPath,
-      value: String(group.length),
+      value: group.kind === "vectorItem" ? "" : String(group.length),
       encodedAs: group.encodedAs,
-      decodedAs: group.kind === "array" ? "Array" : "Vector",
+      decodedAs,
     },
     joinedPath: formatFieldPath(group.path),
     joinedNamedPath: group.key,
     depth,
     expandableKind: group.kind,
-    collectionLength: group.length,
+    collectionLength: group.kind === "vectorItem" ? undefined : group.length,
   };
 }
 
@@ -358,6 +359,17 @@ function EntityFieldList() {
             groupKey,
             Math.max(vectorMaxIndexByKey.get(groupKey) ?? -1, Number(part)),
           );
+
+          const itemNamedPath = entityField.namedPath.slice(0, i + 1);
+          const itemKey = itemNamedPath.join(".");
+          groups.set(itemKey, {
+            key: itemKey,
+            path: entityField.path.slice(0, i + 1),
+            namedPath: itemNamedPath,
+            kind: "vectorItem",
+            length: 0,
+            encodedAs: "item",
+          });
         } else if (arrayType) {
           groups.set(groupKey, {
             key: groupKey,
@@ -414,6 +426,23 @@ function EntityFieldList() {
 
         if (i === entityField.namedPath.length - 1 && group.kind === "array" && arrayType) {
           leafEncodedAs = arrayType.elementType;
+        }
+
+        const itemKey = entityField.namedPath.slice(0, i + 1).join(".");
+        const itemGroup = groups.get(itemKey);
+        if (itemGroup?.kind !== "vectorItem") {
+          continue;
+        }
+
+        if (!emittedGroups.has(itemKey)) {
+          emitRow(groupRow(itemGroup, depth));
+          emittedGroups.add(itemKey);
+        }
+
+        depth += 1;
+        if (!expandedFieldGroups.has(itemKey)) {
+          hiddenByCollapsedGroup = true;
+          break;
         }
       }
 
@@ -603,9 +632,11 @@ function EntityFieldList() {
                     </>
                   )}
                   <span className={cn("text-fg", entityFieldItem.expandableKind && "opacity-60")}>
-                    {entityFieldItem.expandableKind
-                      ? `length ${entityFieldItem.collectionLength ?? entityFieldItem.inner.value}`
-                      : entityFieldItem.inner.value}
+                    {entityFieldItem.expandableKind === "vectorItem"
+                      ? ""
+                      : entityFieldItem.expandableKind
+                        ? `length ${entityFieldItem.collectionLength ?? entityFieldItem.inner.value}`
+                        : entityFieldItem.inner.value}
                   </span>
                   {handle &&
                     (handleValid ? (
