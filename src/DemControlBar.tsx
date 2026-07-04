@@ -41,7 +41,7 @@ export default function DemControlBar() {
         </span>
       </Tooltip>
       <Slider
-        min={-1}
+        min={0}
         max={demTotalTicks}
         value={[value]}
         onValueChange={handleValueChange}

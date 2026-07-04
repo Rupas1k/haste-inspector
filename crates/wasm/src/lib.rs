@@ -77,19 +77,13 @@ impl WrappedParser {
 
     #[wasm_bindgen(js_name = "runToTick")]
     pub fn run_to_tick(&mut self, tick: i32) -> Result<(), JsError> {
-        if tick < 0 {
-            return Ok(());
-        }
-
         let target_tick = tick as u32;
         let current_tick = self.parser.context().tick();
         if target_tick == current_tick {
-            Ok(())
-        } else if current_tick == u32::MAX || target_tick > current_tick {
-            self.parser.run_to_tick(target_tick).map_err(to_js_error)
-        } else {
-            self.parser.jump_to_tick(target_tick).map_err(to_js_error)
+            return Ok(());
         }
+
+        self.parser.jump_to_tick(target_tick).map_err(to_js_error)
     }
 
     #[wasm_bindgen(js_name = "listEntities")]
