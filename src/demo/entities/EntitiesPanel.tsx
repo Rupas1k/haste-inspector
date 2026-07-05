@@ -16,7 +16,7 @@ import * as DropdownMenu from "../../shared/components/DropdownMenu";
 import { ScrollArea } from "../../shared/components/ScrollArea";
 import { Tooltip } from "../../shared/components/Tooltip";
 import { cn } from "../../shared/utils/style";
-import { buildEntityFieldRows } from "./entityFieldGrouping";
+import { buildEntityFieldRows, filterEntityFieldRows } from "./entityFieldGrouping";
 import type { EntityFieldRow } from "./entityTypes";
 
 const LI_HEIGHT = 26;
@@ -298,6 +298,10 @@ function EntityFieldList() {
     () => buildEntityFieldRows(rawEntityFieldList, expandedFieldGroups),
     [rawEntityFieldList, expandedFieldGroups],
   );
+  const { entityFieldList: searchableEntityFieldList } = useMemo(
+    () => buildEntityFieldRows(rawEntityFieldList, "all"),
+    [rawEntityFieldList],
+  );
 
   const [, startTransition] = useTransition();
   const [filteredEntityFieldList, setFinalEntityFieldList] = useState(entityFieldList);
@@ -305,16 +309,24 @@ function EntityFieldList() {
     (entries, searchCmpFn) => {
       startTransition(() => {
         if (searchCmpFn) {
-          setFinalEntityFieldList(
-            entries?.filter((entry) => searchCmpFn(entry.joinedNamedPath)) ?? [],
-          );
+          setFinalEntityFieldList(filterEntityFieldRows(searchableEntityFieldList, searchCmpFn));
         } else {
           setFinalEntityFieldList(entries ?? []);
         }
       });
     },
-    [],
+    [searchableEntityFieldList],
   );
+
+  const visibleFieldGroups = useMemo(() => {
+    const groupNames = new Set<string>();
+    for (const row of filteredEntityFieldList ?? []) {
+      for (let i = 1; i < row.inner.namedPath.length; i++) {
+        groupNames.add(row.inner.namedPath.slice(0, i).join("."));
+      }
+    }
+    return groupNames;
+  }, [filteredEntityFieldList]);
 
   const viewportRef = useRef<HTMLDivElement>(null);
   const virtualizer = useVirtualizer({
@@ -388,8 +400,9 @@ function EntityFieldList() {
           {virtualizer.getVirtualItems().map((virtualItem) => {
             const entityFieldItem = filteredEntityFieldList[virtualItem.index];
             const groupExpanded =
-              !!entityFieldItem.expandableKind &&
-              expandedFieldGroups.has(entityFieldItem.joinedNamedPath);
+              (!!entityFieldItem.expandableKind &&
+                expandedFieldGroups.has(entityFieldItem.joinedNamedPath)) ||
+              visibleFieldGroups.has(entityFieldItem.joinedNamedPath);
 
             const handle =
               !entityFieldItem.expandableKind &&

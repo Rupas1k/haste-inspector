@@ -37,7 +37,7 @@ function groupRow(group: EntityFieldGroup, depth: number): EntityFieldRow {
 
 export function buildEntityFieldRows(
   rawEntityFieldList: EntityFieldLi[] | undefined,
-  expandedFieldGroups: Set<string>,
+  expandedFieldGroups: Set<string> | "all",
 ) {
   let joinedPathMaxLen = 0;
   const rows: EntityFieldRow[] = [];
@@ -46,6 +46,8 @@ export function buildEntityFieldRows(
   const emittedGroups = new Set<string>();
 
   const sortedFields = rawEntityFieldList?.slice().sort(compareFieldPaths);
+  const isExpanded = (groupKey: string) =>
+    expandedFieldGroups === "all" || expandedFieldGroups.has(groupKey);
 
   for (const entityField of sortedFields ?? []) {
     const arrayType = getArrayTypeParts(entityField.encodedAs);
@@ -146,7 +148,7 @@ export function buildEntityFieldRows(
       }
 
       depth += 1;
-      if (!expandedFieldGroups.has(groupKey)) {
+      if (!isExpanded(groupKey)) {
         hiddenByCollapsedGroup = true;
         break;
       }
@@ -167,7 +169,7 @@ export function buildEntityFieldRows(
       }
 
       depth += 1;
-      if (!expandedFieldGroups.has(itemKey)) {
+      if (!isExpanded(itemKey)) {
         hiddenByCollapsedGroup = true;
         break;
       }
@@ -200,4 +202,27 @@ export function buildEntityFieldRows(
   }
 
   return { entityFieldList: rows, joinedPathMaxLen };
+}
+
+export function filterEntityFieldRows(
+  rows: EntityFieldRow[],
+  searchCmpFn: (value: string) => boolean,
+) {
+  const rowsByPath = new Map(rows.map((row) => [row.joinedNamedPath, row]));
+  const includedPaths = new Set<string>();
+
+  for (const row of rows) {
+    if (!searchCmpFn(row.joinedNamedPath)) {
+      continue;
+    }
+
+    for (let i = 1; i <= row.inner.namedPath.length; i++) {
+      const parentPath = row.inner.namedPath.slice(0, i).join(".");
+      if (rowsByPath.has(parentPath)) {
+        includedPaths.add(parentPath);
+      }
+    }
+  }
+
+  return rows.filter((row) => includedPaths.has(row.joinedNamedPath));
 }
