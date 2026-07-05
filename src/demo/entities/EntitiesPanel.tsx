@@ -4,7 +4,7 @@ import {
   isEHandleValid,
   type EntityFieldLi,
   type EntityLi,
-} from "../../generated/wasm/haste_inspector_wasm";
+} from "../../generated/wasm";
 import { useAtom } from "jotai";
 import { ChevronDownIcon, ChevronRightIcon, CogIcon, Link2Icon, Link2OffIcon } from "lucide-react";
 import { useCallback, useMemo, useRef, useState, useTransition } from "react";
@@ -26,6 +26,7 @@ const DEFAULT_SHOW_ENTITY_INDEX = false;
 const DEFAULT_SHOW_FIELD_ENCODED_TYPE = true;
 const DEFAULT_SHOW_FIELD_DECODED_TYPE = false;
 const DEFAULT_SHOW_FIELD_PATH = false;
+const DEFAULT_EXPAND_ALL_FIELD_GROUPS = false;
 
 type EntityListPreferencesProps = {
   showEntityIndex: boolean;
@@ -213,6 +214,8 @@ type EntityFieldListPreferencesProps = {
   setShowFieldEncodedType: (value: boolean) => void;
   showFieldDecodedType: boolean;
   setShowFieldDecodedType: (value: boolean) => void;
+  expandAllFieldGroups: boolean;
+  setExpandAllFieldGroups: (value: boolean) => void;
 };
 
 // NOTE: keep this in sync with EntityListPreferences
@@ -224,6 +227,8 @@ function EntityFieldListPreferences(props: EntityFieldListPreferencesProps) {
     setShowFieldEncodedType,
     showFieldDecodedType,
     setShowFieldDecodedType,
+    expandAllFieldGroups,
+    setExpandAllFieldGroups,
   } = props;
 
   const [open, setOpen] = useState(false);
@@ -263,6 +268,12 @@ function EntityFieldListPreferences(props: EntityFieldListPreferencesProps) {
           >
             decoded type
           </DropdownMenu.CheckboxItem>
+          <DropdownMenu.CheckboxItem
+            checked={expandAllFieldGroups}
+            onCheckedChange={setExpandAllFieldGroups}
+          >
+            expand all fields
+          </DropdownMenu.CheckboxItem>
         </DropdownMenu.Content>
       </DropdownMenu.Portal>
     </DropdownMenu.Root>
@@ -293,10 +304,12 @@ function EntityFieldList() {
   }, [demParser, demView, demSelectedEntityIndex, demTick]);
 
   const [expandedFieldGroups, setExpandedFieldGroups] = useState(() => new Set<string>());
+  const [expandAllFieldGroups, setExpandAllFieldGroups] = useState(DEFAULT_EXPAND_ALL_FIELD_GROUPS);
 
   const { entityFieldList, joinedPathMaxLen } = useMemo(
-    () => buildEntityFieldRows(rawEntityFieldList, expandedFieldGroups),
-    [rawEntityFieldList, expandedFieldGroups],
+    () =>
+      buildEntityFieldRows(rawEntityFieldList, expandAllFieldGroups ? "all" : expandedFieldGroups),
+    [rawEntityFieldList, expandedFieldGroups, expandAllFieldGroups],
   );
   const { entityFieldList: searchableEntityFieldList } = useMemo(
     () => buildEntityFieldRows(rawEntityFieldList, "all"),
@@ -380,6 +393,8 @@ function EntityFieldList() {
               setShowFieldDecodedType={setShowFieldDecodedType}
               showFieldPath={showFieldPath}
               setShowFieldPath={setShowFieldPath}
+              expandAllFieldGroups={expandAllFieldGroups}
+              setExpandAllFieldGroups={setExpandAllFieldGroups}
             />
           </>
         }
@@ -401,7 +416,8 @@ function EntityFieldList() {
             const entityFieldItem = filteredEntityFieldList[virtualItem.index];
             const groupExpanded =
               (!!entityFieldItem.expandableKind &&
-                expandedFieldGroups.has(entityFieldItem.joinedNamedPath)) ||
+                (expandAllFieldGroups ||
+                  expandedFieldGroups.has(entityFieldItem.joinedNamedPath))) ||
               visibleFieldGroups.has(entityFieldItem.joinedNamedPath);
 
             const handle =
