@@ -47,6 +47,7 @@ function DemViewSelection() {
           {demView === "entities" && "entities"}
           {demView === "baselineEntities" && "baseline entities"}
           {demView === "stringTables" && "string tables"}
+          {demView === "gameEvents" && "game events"}
           <ChevronDownIcon className={cn("size-3 stroke-fg-subtle ml-2")} />
         </Button>
       </DropdownMenu.Trigger>
@@ -74,6 +75,12 @@ function DemViewSelection() {
             onCheckedChange={() => setDemView("stringTables")}
           >
             string tables
+          </DropdownMenu.CheckboxItem>
+          <DropdownMenu.CheckboxItem
+            checked={demView === "gameEvents"}
+            onCheckedChange={() => setDemView("gameEvents")}
+          >
+            game events
           </DropdownMenu.CheckboxItem>
         </DropdownMenu.Content>
       </DropdownMenu.Portal>

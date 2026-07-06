@@ -41,12 +41,31 @@ pub struct StringTableItemLi {
     pub user_data: Option<Vec<u8>>,
 }
 
+#[wasm_bindgen(getter_with_clone)]
+pub struct GameEventLi {
+    pub id: i32,
+    pub name: String,
+    #[wasm_bindgen(js_name = "keyCount")]
+    pub key_count: i32,
+}
+
+#[wasm_bindgen(getter_with_clone)]
+pub struct GameEventKeyLi {
+    pub index: i32,
+    pub name: String,
+    #[wasm_bindgen(js_name = "typeId")]
+    pub type_id: i32,
+    #[wasm_bindgen(js_name = "typeName")]
+    pub type_name: String,
+}
+
 #[derive(Default)]
 struct InspectorState;
 
 #[observer]
 #[uses_entities]
 #[uses_string_tables]
+#[uses_game_events]
 impl InspectorState {}
 
 #[wasm_bindgen]
@@ -159,6 +178,43 @@ impl WrappedParser {
                     .map(|row| StringTableItemLi {
                         string: Some(row.key().as_bytes().to_vec()),
                         user_data: row.value().map(|value| value.to_vec()),
+                    })
+                    .collect()
+            })
+    }
+
+    #[wasm_bindgen(js_name = "listGameEvents")]
+    pub fn list_game_events(&self) -> Vec<GameEventLi> {
+        let mut events = self
+            .parser
+            .context()
+            .game_events()
+            .iter()
+            .map(|(id, definition)| GameEventLi {
+                id,
+                name: definition.name().to_string(),
+                key_count: definition.keys().count() as i32,
+            })
+            .collect::<Vec<_>>();
+        events.sort_by_key(|event| event.id);
+        events
+    }
+
+    #[wasm_bindgen(js_name = "listGameEventKeys")]
+    pub fn list_game_event_keys(&self, event_id: i32) -> Option<Vec<GameEventKeyLi>> {
+        self.parser
+            .context()
+            .game_events()
+            .iter()
+            .find(|(id, _definition)| *id == event_id)
+            .map(|(_id, definition)| {
+                definition
+                    .keys()
+                    .map(|key| GameEventKeyLi {
+                        index: key.id(),
+                        name: key.name().to_string(),
+                        type_id: key.type_id(),
+                        type_name: key.type_name().to_string(),
                     })
                     .collect()
             })

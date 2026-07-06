@@ -3,6 +3,7 @@ import { useAtom } from "jotai";
 import { useEffect, useState } from "react";
 import EntitiesPanel from "./entities/EntitiesPanel";
 import DemoLayout from "./DemoLayout";
+import GameEventsPanel from "./gameEvents/GameEventsPanel";
 import StringTablesPanel from "./stringTables/StringTablesPanel";
 import { demFileAtom, demParserAtom, demTickAtom, demViewAtom } from "./demoState";
 import { Tooltip } from "../shared/components/Tooltip";
@@ -85,6 +86,7 @@ export default function DemoScreen() {
     <DemoLayout>
       {(demView === "entities" || demView === "baselineEntities") && <EntitiesPanel />}
       {demView === "stringTables" && <StringTablesPanel />}
+      {demView === "gameEvents" && <GameEventsPanel />}
     </DemoLayout>
   );
 }

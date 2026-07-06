@@ -4,5 +4,8 @@ export const demFileAtom = atom<File | undefined>(undefined);
 export const demParserAtom = atom<WrappedParser | undefined>(undefined);
 export const demTickAtom = atom(0);
 export const demSelectedEntityIndexAtom = atom<number | undefined>(undefined);
-export const demViewAtom = atom<"entities" | "baselineEntities" | "stringTables">("entities");
+export const demViewAtom = atom<"entities" | "baselineEntities" | "stringTables" | "gameEvents">(
+  "entities",
+);
 export const demSelectedStringTableNameAtom = atom<string | undefined>(undefined);
+export const demSelectedGameEventIdAtom = atom<number | undefined>(undefined);
