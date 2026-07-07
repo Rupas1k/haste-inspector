@@ -38,27 +38,50 @@ export default function DemoScreen() {
   const [doingWhat, setDoingWhat] = useState("zzz");
   const [initError, setInitError] = useState<unknown>();
   useEffect(() => {
+    let cancelled = false;
+
     const asyncFn = async () => {
       try {
+        setInitError(undefined);
+
         setDoingWhat("initializing web assembly");
         await initHaste();
+        if (cancelled) {
+          return;
+        }
 
         setDoingWhat("loading file into memory");
         const fileBytes = await readFileToBytes(demFile!);
+        if (cancelled) {
+          return;
+        }
 
         setDoingWhat("constructing parser");
         const parser = new WrappedParser(fileBytes);
+        if (cancelled) {
+          return;
+        }
 
         setDoingWhat("seeking to first tick");
         parser.runToTick(FIRST_TICK);
+        if (cancelled) {
+          return;
+        }
 
         setDemParser(parser);
         setDemTick(parser.tick());
       } catch (error) {
+        if (cancelled) {
+          return;
+        }
         setInitError(error);
       }
     };
     void asyncFn();
+
+    return () => {
+      cancelled = true;
+    };
   }, [demFile, setDemParser, setDemTick]);
 
   if (!demParser) {

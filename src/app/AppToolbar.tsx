@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { useLayoutEffect, useState } from "react";
 import { darkModeAtom, fullWidthAtom } from "./appState";
-import { demFileAtom, demViewAtom } from "../demo/demoState";
+import { demFileAtom, demSetFileAtom, demViewAtom } from "../demo/demoState";
 import { Button } from "../shared/components/Button";
 import * as DropdownMenu from "../shared/components/DropdownMenu";
 import { Tooltip } from "../shared/components/Tooltip";
@@ -89,7 +89,8 @@ function DemViewSelection() {
 }
 
 function DemFileSection() {
-  const [demFile, setDemFile] = useAtom(demFileAtom);
+  const [demFile] = useAtom(demFileAtom);
+  const [, setDemFile] = useAtom(demSetFileAtom);
 
   // TODO: get rid of x button and store file history -> allow to switch between
   // files that were open.
