@@ -21,19 +21,20 @@ function GameEventList() {
 
   const [, startTransition] = useTransition();
   const [filteredGameEventList, setFilteredGameEventList] = useState(gameEventList);
-  const handleFilterUpdate: UpdateEventHandler<GameEventLi> = useCallback((entries, searchCmpFn) => {
-    startTransition(() => {
-      if (searchCmpFn) {
-        setFilteredGameEventList(
-          entries?.filter(
-            (entry) => searchCmpFn(entry.name) || searchCmpFn(String(entry.id)),
-          ),
-        );
-      } else {
-        setFilteredGameEventList(entries);
-      }
-    });
-  }, []);
+  const handleFilterUpdate: UpdateEventHandler<GameEventLi> = useCallback(
+    (entries, searchCmpFn) => {
+      startTransition(() => {
+        if (searchCmpFn) {
+          setFilteredGameEventList(
+            entries?.filter((entry) => searchCmpFn(entry.name) || searchCmpFn(String(entry.id))),
+          );
+        } else {
+          setFilteredGameEventList(entries);
+        }
+      });
+    },
+    [],
+  );
 
   const viewportRef = useRef<HTMLDivElement>(null);
   const virtualizer = useVirtualizer({
