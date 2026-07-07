@@ -19,7 +19,7 @@ pub struct EntityLi {
 
 #[wasm_bindgen(getter_with_clone)]
 pub struct EntityFieldLi {
-    pub path: Vec<u8>,
+    pub path: Vec<u16>,
     #[wasm_bindgen(js_name = "namedPath")]
     pub named_path: Vec<String>,
     pub value: String,
@@ -235,7 +235,6 @@ fn collect_entity_field_list(fields: Vec<EntityField<'_>>) -> Vec<EntityFieldLi>
             path: field
                 .path
                 .into_iter()
-                .map(|part| u8::try_from(part).unwrap_or(u8::MAX))
                 .collect(),
             named_path: field.name.split('.').map(ToString::to_string).collect(),
             value: field.value.map(format_field_value).unwrap_or_default(),
