@@ -4,7 +4,7 @@ import {
   isEHandleValid,
   type EntityFieldLi,
   type EntityLi,
-} from "../../generated/wasm";
+} from "../../generated/wasm/haste_inspector_wasm";
 import { useAtom } from "jotai";
 import { ChevronDownIcon, ChevronRightIcon, CogIcon, Link2Icon, Link2OffIcon } from "lucide-react";
 import { useCallback, useMemo, useRef, useState, useTransition } from "react";

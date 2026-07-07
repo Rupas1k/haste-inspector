@@ -1,6 +1,6 @@
 import type { EntityFieldLi } from "../../generated/wasm/haste_inspector_wasm";
 
-export function formatFieldPath(path: Uint8Array) {
+export function formatFieldPath(path: Uint16Array) {
   return Array.from(path)
     .map((part) => part.toString().padStart(4, " "))
     .join("");

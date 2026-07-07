@@ -11,7 +11,7 @@ export type EntityFieldRow = {
 
 export type EntityFieldGroup = {
   key: string;
-  path: Uint8Array;
+  path: Uint16Array;
   namedPath: string[];
   kind: "array" | "vector" | "vectorItem";
   length: number;
