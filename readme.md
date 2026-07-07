@@ -9,6 +9,7 @@ Forked from [blukai/haste-inspector](https://github.com/blukai/haste-inspector).
 - Changed backend to [source2-demo](https://github.com/Rupas1k/source2-demo) (CS2 support + fixes).
 - Changed project layout.
 - Small UI improvements and fixes.
+- Added game events inspector.
 
 ## Original README
 
