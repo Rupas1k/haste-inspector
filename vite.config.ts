@@ -1,7 +1,7 @@
 import react from "@vitejs/plugin-react-swc";
 import { defineConfig } from "vite";
 
-export default defineConfig(({ mode }) => ({
-  base: mode === "pages" ? "/haste-inspector/" : "/",
+export default defineConfig({
+  base: "./",
   plugins: [react()],
-}));
+});
