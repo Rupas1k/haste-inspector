@@ -232,10 +232,7 @@ fn collect_entity_field_list(fields: Vec<EntityField<'_>>) -> Vec<EntityFieldLi>
     fields
         .into_iter()
         .map(|field| EntityFieldLi {
-            path: field
-                .path
-                .into_iter()
-                .collect(),
+            path: field.path.into_iter().collect(),
             named_path: field.name.split('.').map(ToString::to_string).collect(),
             value: field.value.map(format_field_value).unwrap_or_default(),
             encoded_as: field.field_type,
