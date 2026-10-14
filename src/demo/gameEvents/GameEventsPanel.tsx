@@ -1,7 +1,7 @@
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { useAtom } from "jotai";
 import { useCallback, useMemo, useRef, useState, useTransition } from "react";
-import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
+import { Group, Panel, Separator } from "react-resizable-panels";
 import type { GameEventLi } from "../../generated/wasm/haste_inspector_wasm";
 import FilterBar, { type UpdateEventHandler } from "../../shared/components/FilterBar";
 import { ScrollArea } from "../../shared/components/ScrollArea";
@@ -204,15 +204,15 @@ function GameEventKeyList() {
 export default function GameEventsPanel() {
   return (
     <div className="grow h-0">
-      <PanelGroup direction="horizontal">
-        <Panel minSize={24} defaultSize={36}>
+      <Group orientation="horizontal">
+        <Panel minSize="24%" defaultSize="36%">
           <GameEventList />
         </Panel>
-        <PanelResizeHandle className="haste-panel-resize-handle" />
-        <Panel minSize={24}>
+        <Separator className="haste-panel-resize-handle" />
+        <Panel minSize="24%">
           <GameEventKeyList />
         </Panel>
-      </PanelGroup>
+      </Group>
     </div>
   );
 }

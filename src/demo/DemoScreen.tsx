@@ -1,13 +1,14 @@
 import initHaste, { WrappedParser } from "../generated/wasm/haste_inspector_wasm";
 import { useAtom } from "jotai";
-import { useEffect, useState } from "react";
-import EntitiesPanel from "./entities/EntitiesPanel";
+import { lazy, Suspense, useEffect, useState } from "react";
 import DemoLayout from "./DemoLayout";
-import GameEventsPanel from "./gameEvents/GameEventsPanel";
-import StringTablesPanel from "./stringTables/StringTablesPanel";
 import { demFileAtom, demParserAtom, demTickAtom, demViewAtom } from "./demoState";
 import { Tooltip } from "../shared/components/Tooltip";
 import { assetPath } from "../shared/utils/assetPath";
+
+const EntitiesPanel = lazy(() => import("./entities/EntitiesPanel"));
+const GameEventsPanel = lazy(() => import("./gameEvents/GameEventsPanel"));
+const StringTablesPanel = lazy(() => import("./stringTables/StringTablesPanel"));
 
 const errorMessage = (error: unknown) => (error instanceof Error ? error.message : String(error));
 const FIRST_TICK = 0;
@@ -107,9 +108,11 @@ export default function DemoScreen() {
 
   return (
     <DemoLayout>
-      {(demView === "entities" || demView === "baselineEntities") && <EntitiesPanel />}
-      {demView === "stringTables" && <StringTablesPanel />}
-      {demView === "gameEvents" && <GameEventsPanel />}
+      <Suspense fallback={null}>
+        {(demView === "entities" || demView === "baselineEntities") && <EntitiesPanel />}
+        {demView === "stringTables" && <StringTablesPanel />}
+        {demView === "gameEvents" && <GameEventsPanel />}
+      </Suspense>
     </DemoLayout>
   );
 }

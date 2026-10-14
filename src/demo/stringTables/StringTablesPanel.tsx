@@ -1,7 +1,7 @@
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { useAtom } from "jotai";
 import { useCallback, useMemo, useRef } from "react";
-import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
+import { Group, Panel, Separator } from "react-resizable-panels";
 import { demParserAtom, demSelectedStringTableNameAtom, demTickAtom } from "../demoState";
 import { ScrollArea } from "../../shared/components/ScrollArea";
 import { cn } from "../../shared/utils/style";
@@ -195,15 +195,15 @@ function StringTableItemList() {
 export default function StringTablesPanel() {
   return (
     <div className="grow h-0">
-      <PanelGroup direction="horizontal">
-        <Panel minSize={24} defaultSize={24}>
+      <Group orientation="horizontal">
+        <Panel minSize="24%" defaultSize="24%">
           <StringTableList />
         </Panel>
-        <PanelResizeHandle className="haste-panel-resize-handle" />
-        <Panel minSize={24}>
+        <Separator className="haste-panel-resize-handle" />
+        <Panel minSize="24%">
           <StringTableItemList />
         </Panel>
-      </PanelGroup>
+      </Group>
     </div>
   );
 }

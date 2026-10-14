@@ -3,7 +3,7 @@ import { useLayoutEffect, useState } from "react";
 
 const INITIAL_STATE = Object.freeze({ width: 0, height: 0 });
 
-export function useElementSize(ref: React.RefObject<HTMLElement | SVGElement>) {
+export function useElementSize(ref: React.RefObject<HTMLElement | SVGElement | null>) {
   const [size, setSize] = useState<{
     width: number;
     height: number;

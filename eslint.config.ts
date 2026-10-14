@@ -9,7 +9,16 @@ const tsconfigRootDir = dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig(
   {
-    ignores: ["dist/**", "target/**", "node_modules/**", "src/generated/wasm/**"],
+    ignores: [
+      ".agents/**",
+      ".aws/**",
+      ".codex/**",
+      "dist/**",
+      "eslint.config.ts",
+      "node_modules/**",
+      "src/generated/wasm/**",
+      "target/**",
+    ],
   },
   {
     files: ["**/*.{js,mjs,cjs}"],

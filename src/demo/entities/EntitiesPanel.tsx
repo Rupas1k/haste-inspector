@@ -8,7 +8,7 @@ import {
 import { useAtom } from "jotai";
 import { ChevronDownIcon, ChevronRightIcon, CogIcon, Link2Icon, Link2OffIcon } from "lucide-react";
 import { useCallback, useMemo, useRef, useState, useTransition } from "react";
-import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
+import { Group, Panel, Separator } from "react-resizable-panels";
 import FilterBar, { type UpdateEventHandler } from "../../shared/components/FilterBar";
 import { demParserAtom, demSelectedEntityIndexAtom, demTickAtom, demViewAtom } from "../demoState";
 import { Button } from "../../shared/components/Button";
@@ -514,15 +514,15 @@ function EntityFieldList() {
 export default function EntitiesPanel() {
   return (
     <div className="grow h-0">
-      <PanelGroup direction="horizontal">
-        <Panel minSize={24} defaultSize={24}>
+      <Group orientation="horizontal">
+        <Panel minSize="24%" defaultSize="24%">
           <EntityList />
         </Panel>
-        <PanelResizeHandle className="haste-panel-resize-handle" />
-        <Panel minSize={24}>
+        <Separator className="haste-panel-resize-handle" />
+        <Panel minSize="24%">
           <EntityFieldList />
         </Panel>
-      </PanelGroup>
+      </Group>
     </div>
   );
 }

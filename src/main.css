@@ -1,6 +1,5 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@config "../tailwind.config.js";
 
 @layer base {
   .dark {
@@ -60,6 +59,6 @@
   }
 
   .haste-panel-resize-handle {
-    @apply w-px h-full bg-divider data-[resize-handle-state=hover]:bg-current data-[resize-handle-state=drag]:bg-current;
+    @apply w-px h-full bg-divider data-[separator=hover]:bg-current data-[separator=active]:bg-current;
   }
 }
